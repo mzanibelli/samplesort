@@ -75,7 +75,7 @@ func run(bin, src, dst string, load loadFunc) error {
 	if exists(dst) {
 		return load(s, dst)
 	}
-	log.Println("run:", src)
+	log.Printf("%s: %s: start", path.Base(bin), src)
 	cmd := exec.Command(bin, src, dst)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("%s: %s: %v", path.Base(bin), src, err)
