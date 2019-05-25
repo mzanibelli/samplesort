@@ -12,6 +12,10 @@ import (
 	"path"
 	"path/filepath"
 
+	"samplesort/collection"
+	"samplesort/engine"
+	"samplesort/sample"
+
 	"github.com/bugra/kmeans"
 )
 
@@ -23,7 +27,7 @@ const (
 	EXT_OUT          string  = ".json"
 	PARAM_SIZE       int     = 100
 	PARAM_THRESHOLD  int     = 0
-	PARAM_NORMALIZE  float64 = 0.0005
+	PARAM_PRECISION  float64 = 0.05
 )
 
 func SampleSort() {
@@ -31,7 +35,7 @@ func SampleSort() {
 	if err != nil {
 		usage(err)
 	}
-	sink := make(chan *Sample)
+	sink := make(chan *sample.Sample)
 	done := make(chan struct{})
 	go analyze(sink, done)
 	err = filepath.Walk(os.Args[1], extract(bin, loader(sink)))
@@ -49,7 +53,7 @@ func usage(err error) {
 	os.Exit(1)
 }
 
-type loadFunc func(s *Sample, dst string) error
+type loadFunc func(s *sample.Sample, dst string) error
 
 func extract(bin string, load loadFunc) filepath.WalkFunc {
 	return func(path string, info os.FileInfo, err error) error {
@@ -70,7 +74,7 @@ func extract(bin string, load loadFunc) filepath.WalkFunc {
 }
 
 func run(bin, src, dst string, load loadFunc) error {
-	s := new(Sample)
+	s := new(sample.Sample)
 	s.Path = src
 	if exists(dst) {
 		return load(s, dst)
@@ -83,8 +87,8 @@ func run(bin, src, dst string, load loadFunc) error {
 	return load(s, dst)
 }
 
-func loader(sink chan<- *Sample) loadFunc {
-	return func(s *Sample, dst string) error {
+func loader(sink chan<- *sample.Sample) loadFunc {
+	return func(s *sample.Sample, dst string) error {
 		fd, err := os.Open(dst)
 		if err != nil {
 			return fmt.Errorf("file: %s: %v", dst, err)
@@ -93,9 +97,15 @@ func loader(sink chan<- *Sample) loadFunc {
 		if err != nil {
 			return fmt.Errorf("read: %s: %v", dst, err)
 		}
-		if err := json.Unmarshal(content, s); err != nil {
+		type payload struct {
+			LowLevel map[string]interface{} `json:"lowlevel"`
+			Tonal    map[string]interface{} `json:"tonal"`
+		}
+		p := new(payload)
+		if err := json.Unmarshal(content, p); err != nil {
 			return fmt.Errorf("json: %s: %v", dst, err)
 		}
+		s.Flatten(p.LowLevel, p.Tonal)
 		sink <- s
 		return nil
 	}
@@ -136,21 +146,17 @@ func checksum(path string) bool {
 	return sum == EXPECTED_SHA256
 }
 
-func analyze(input <-chan *Sample, done chan<- struct{}) {
+func analyze(input <-chan *sample.Sample, done chan<- struct{}) {
 	defer close(done)
-	collection := new(Collection)
-	collection.build(input)
-	means, err := kmeans.Kmeans(collection.features(), PARAM_SIZE,
+	coll := collection.New(engine.New(PARAM_PRECISION))
+	for e := range input {
+		coll.Append(e)
+	}
+	means, err := kmeans.Kmeans(coll.Features(), PARAM_SIZE,
 		kmeans.HammingDistance, PARAM_THRESHOLD)
 	if err != nil {
 		log.Println("could not compute kmeans:", err)
 	}
-	collection.categorize(means)
-	output(collection)
-}
-
-func output(c *Collection) {
-	for _, s := range c.Samples {
-		fmt.Fprintln(os.Stdout, s.Group, s.Path)
-	}
+	coll.Sort(means)
+	fmt.Fprintln(os.Stdout, coll)
 }
