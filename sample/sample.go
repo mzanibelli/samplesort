@@ -1,24 +1,14 @@
 package sample
 
-import (
-	"log"
-
-	"github.com/jeremywohl/flatten"
-)
-
-type Unit interface {
-	Extract(chunks ...map[string]interface{})
-	Data() map[string]float64
-}
+import "github.com/jeremywohl/flatten"
 
 type Sample struct {
 	Path string
 	data map[string]float64
 }
 
-func (s *Sample) Extract(chunks ...map[string]interface{}) { s.Flatten(chunks...) }
-func (s *Sample) Data() map[string]float64                 { return s.Flatten() }
-func (s *Sample) String() string                           { return s.Path + "\n" }
+func (s *Sample) String() string           { return s.Path + "\n" }
+func (s *Sample) Data() map[string]float64 { return s.Flatten() }
 
 func (s *Sample) Flatten(chunks ...map[string]interface{}) map[string]float64 {
 	switch {
@@ -51,11 +41,8 @@ func floats(chunks ...map[string]interface{}) <-chan pair {
 	go func() {
 		defer close(c)
 		for _, chunk := range chunks {
-			flat, err := flatten.Flatten(chunk, "", flatten.DotStyle)
-			if err != nil {
-				log.Println("flatten:", err)
-				return
-			}
+			// ignore errors here
+			flat, _ := flatten.Flatten(chunk, "", flatten.DotStyle)
 			send(flat)
 		}
 	}()

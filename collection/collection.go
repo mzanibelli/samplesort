@@ -42,19 +42,19 @@ func (c *Collection) Features() [][]float64 {
 	return result
 }
 
+func (c *Collection) Sort(centers []int) {
+	if len(c.entities) != len(centers) {
+		return
+	}
+	sort.Slice(c.entities, func(i, j int) bool {
+		return centers[i] < centers[j]
+	})
+}
+
 func (c *Collection) String() string {
 	b := new(strings.Builder)
 	for _, e := range c.entities {
 		b.WriteString(e.String())
 	}
 	return b.String()
-}
-
-func (c *Collection) Sort(centers []int) {
-	if len(c.entities) != len(centers) {
-		panic("collection and analysis are different")
-	}
-	sort.Slice(c.entities, func(i, j int) bool {
-		return centers[i] < centers[j]
-	})
 }

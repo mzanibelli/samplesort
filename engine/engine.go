@@ -15,23 +15,33 @@ func New(precision float64) *Engine {
 
 func (e *Engine) Update(key string, n float64) {
 	if _, ok := e.stats[key]; !ok {
-		e.stats[key] = &stat{make([]float64, 0), 0, 0, 0}
+		e.stats[key] = &stat{
+			values: make([]float64, 0),
+			Min:    +math.MaxFloat64,
+			Max:    -math.MaxFloat64,
+			Mean:   0,
+		}
 	}
 	e.stats[key].update(n)
 }
 
 func (e *Engine) Normalize(key string, n float64) float64 {
-	if _, ok := e.stats[key]; !ok {
+	s, ok := e.stats[key]
+	switch {
+	case !ok:
 		return 0
-	}
-	min := e.stats[key].Min
-	max := e.stats[key].Max
-	if (max - min) == 0 {
+	case s.Max == s.Min:
 		return 0
+	case s.Min == 0 && s.Max == 1:
+		return e.round(n)
+	default:
+		return e.round((n - s.Min) /
+			(s.Max - s.Min))
 	}
-	norm := (n - min) / (max - min)
-	x := math.Round(norm/e.precision) * e.precision
-	return x
+}
+
+func (e *Engine) round(n float64) float64 {
+	return math.Round(n/e.precision) * e.precision
 }
 
 type stat struct {
