@@ -1,15 +1,11 @@
 package extractor
 
-import (
-	"log"
-)
-
 type Extractor struct {
 	fs     Storage
-	cmd    RunnerFactory
+	exec   RunnerFunc
 	decode DecodeFunc
-	sink   chan *payload
 	format string
+	sink   chan *payload
 	err    error
 }
 
@@ -18,32 +14,25 @@ type Storage interface {
 	Exists(name string) bool
 }
 
-type RunnerFactory func(src, dst string) Runner
-
+type RunnerFunc func(src, dst string) error
 type DecodeFunc func(content []byte, data []map[string]interface{}) error
 
-type Runner interface {
-	Run() error
-}
-
-func New(fs Storage, cmd RunnerFactory, decode DecodeFunc, format string) *Extractor {
-	return &Extractor{fs, cmd, decode, make(chan *payload), format, nil}
+func New(fs Storage, exec RunnerFunc, decode DecodeFunc, format string) *Extractor {
+	return &Extractor{fs, exec, decode, format, make(chan *payload), nil}
 }
 
 func (e *Extractor) Extract(src string) {
-	s := new(payload)
-	s.path = src
-	s.data = make([]map[string]interface{}, 0)
+	s := &payload{
+		path: src,
+		data: make([]map[string]interface{}, 0),
+	}
 	dst := src + e.format
 	if !e.fs.Exists(dst) {
-		e.err = e.cmd(src, dst).Run()
+		e.err = e.exec(src, dst)
 	}
 	e.load(s, dst)
 	if e.err == nil {
 		e.sink <- s
-	}
-	if e.err != nil {
-		log.Println("extract:", e.err)
 	}
 	e.err = nil
 }

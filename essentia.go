@@ -26,29 +26,20 @@ const (
 )
 
 func SampleSort() {
-	bin, err := which()
-	if err != nil {
-		usage(err)
-	}
-
+	bin := which()
 	ext := extractor.New(fs, bin, decode, format)
 	par := parser.New(fs, ext, whitelist)
 	eng := engine.New(precision)
 	data := collection.New(eng)
-
 	if err := par.Parse(os.Args[1]); err != nil {
 		log.Fatal(err)
 	}
-
 	for e := range ext.Sink() {
 		s := sample.New(e.String())
 		s.Flatten(e.Data()...)
 		data.Append(s)
 	}
-
-	done := analyze.New(data).Analyze()
-
-	<-done
+	<-analyze.New(data).Analyze()
 }
 
 func decode(content []byte, data []map[string]interface{}) error {
@@ -59,28 +50,26 @@ func decode(content []byte, data []map[string]interface{}) error {
 	t := new(tmp)
 	if err := json.Unmarshal(content, t); err != nil {
 		return err
-	} else {
-		data = append(data, t.LowLevel, t.Tonal)
 	}
+	data = append(data, t.LowLevel, t.Tonal)
 	return nil
 }
 
-func which() (extractor.RunnerFactory, error) {
-	nop := func(src, dst string) extractor.Runner { return nil }
+func which() func(src, dst string) error {
 	path := os.Getenv(env)
 	fd, err := fs.Open(path)
 	defer fd.Close()
 	switch {
 	case err != nil:
-		return nop, fmt.Errorf("Error opening executable: %v", err)
+		usage(fmt.Errorf("Error opening executable: %v", err))
 	case !crypto.Check(fd, checksum):
-		return nop, fmt.Errorf("SHA256 mismatch, expected version %q", version)
+		usage(fmt.Errorf("SHA256 mismatch, expected version %q", version))
 	case len(os.Args) != 2:
-		return nop, fmt.Errorf("Expected exactly one argument, got: %d", len(os.Args))
+		usage(fmt.Errorf("Expected exactly one argument, got: %d", len(os.Args)))
 	}
-	return func(src, dst string) extractor.Runner {
-		return exec.Command(path, src, dst)
-	}, nil
+	return func(src, dst string) error {
+		return exec.Command(path, src, dst).Run()
+	}
 }
 
 func usage(err error) {
