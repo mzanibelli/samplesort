@@ -10,12 +10,8 @@ import (
 	"path"
 	"path/filepath"
 
-	"samplesort/collection"
 	"samplesort/crypto"
-	"samplesort/engine"
 	"samplesort/sample"
-
-	"github.com/bugra/kmeans"
 )
 
 const (
@@ -24,8 +20,6 @@ const (
 	ENV_EXTRACTOR    string  = "ESSENTIA_EXTRACTOR"
 	EXT_IN           string  = ".wav"
 	EXT_OUT          string  = ".json"
-	PARAM_SIZE       int     = 100
-	PARAM_THRESHOLD  int     = 0
 	PARAM_PRECISION  float64 = 0.05
 )
 
@@ -131,16 +125,9 @@ func exists(path string) bool {
 }
 
 func analyze(input <-chan *sample.Sample, done chan<- struct{}) {
-	defer close(done)
-	coll := collection.New(engine.New(PARAM_PRECISION))
-	for e := range input {
-		coll.Append(e)
-	}
-	means, err := kmeans.Kmeans(coll.Features(), PARAM_SIZE,
-		kmeans.HammingDistance, PARAM_THRESHOLD)
-	if err != nil {
-		log.Println("could not compute kmeans:", err)
-	}
-	coll.Sort(means)
-	fmt.Fprintln(os.Stdout, coll)
+	// 	defer close(done)
+	// 	coll := collection.New(engine.New(PARAM_PRECISION))
+	// 	for e := range input {
+	// 		coll.Append(e)
+	// 	}
 }
