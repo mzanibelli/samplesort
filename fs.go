@@ -2,6 +2,7 @@ package samplesort
 
 import (
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -15,6 +16,7 @@ type filesystem interface {
 	Stat(name string) (os.FileInfo, error)
 	Exists(name string) bool
 	Walk(name string, f filepath.WalkFunc) error
+	ReadAll(name string) ([]byte, error)
 }
 
 type file interface {
@@ -27,15 +29,19 @@ type file interface {
 
 type osFS struct{}
 
-func (osFS) Open(name string) (file, error) { return os.Open(name) }
-
-func (osFS) Stat(name string) (os.FileInfo, error) { return os.Stat(name) }
+func (osFS) Open(name string) (file, error)              { return os.Open(name) }
+func (osFS) Stat(name string) (os.FileInfo, error)       { return os.Stat(name) }
+func (osFS) Walk(name string, f filepath.WalkFunc) error { return filepath.Walk(name, f) }
 
 func (osFS) Exists(name string) bool {
 	_, err := os.Stat(name)
 	return !os.IsNotExist(err)
 }
 
-func (osFS) Walk(name string, f filepath.WalkFunc) error {
-	return filepath.Walk(name, f)
+func (osFS) ReadAll(name string) ([]byte, error) {
+	fd, err := os.Open(name)
+	if err != nil {
+		return []byte{}, err
+	}
+	return ioutil.ReadAll(fd)
 }

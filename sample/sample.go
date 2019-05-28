@@ -7,16 +7,16 @@ type Sample struct {
 	data map[string]float64
 }
 
+func New(path string) *Sample {
+	return &Sample{path, make(map[string]float64, 0)}
+}
+
 func (s *Sample) String() string           { return s.Path + "\n" }
 func (s *Sample) Data() map[string]float64 { return s.Flatten() }
 
 func (s *Sample) Flatten(chunks ...map[string]interface{}) map[string]float64 {
-	switch {
-	case s.data != nil && len(chunks) == 0:
+	if s.data != nil && len(chunks) == 0 {
 		return s.data
-	case s.data == nil:
-		s.data = make(map[string]float64, 0)
-		break
 	}
 	for p := range floats(chunks...) {
 		s.data[p.key] = p.value

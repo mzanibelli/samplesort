@@ -15,7 +15,7 @@ func TestSample(t *testing.T) {
 				},
 			}
 			expected := map[string]float64{"foo.bar": 0.001}
-			SUT := new(sample.Sample)
+			SUT := sample.New("")
 			actual := SUT.Flatten(input)
 			if !reflect.DeepEqual(expected, actual) {
 				t.Errorf("expected: %v, actual: %v", expected, actual)
@@ -30,7 +30,7 @@ func TestSample(t *testing.T) {
 				},
 			}
 			expected := map[string]float64{"foo.bar": 0.001}
-			SUT := new(sample.Sample)
+			SUT := sample.New("")
 			actual := SUT.Flatten(input)
 			if !reflect.DeepEqual(expected, actual) {
 				t.Errorf("expected: %v, actual: %v", expected, actual)
@@ -44,7 +44,7 @@ func TestSample(t *testing.T) {
 				},
 			}
 			expected := map[string]float64{"foo.bar": 0.001}
-			SUT := new(sample.Sample)
+			SUT := sample.New("")
 			SUT.Flatten(input)
 			actual := SUT.Flatten()
 			if !reflect.DeepEqual(expected, actual) {
