@@ -8,9 +8,12 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
 
+	"samplesort/analyze"
+	"samplesort/collection"
 	"samplesort/crypto"
+	"samplesort/engine"
+	"samplesort/parser"
 	"samplesort/sample"
 )
 
@@ -24,14 +27,13 @@ const (
 )
 
 func SampleSort() {
-	bin, err := which()
+	_, err := which()
 	if err != nil {
 		usage(err)
 	}
 	sink := make(chan *sample.Sample)
-	done := make(chan struct{})
-	go analyze(sink, done)
-	err = filepath.Walk(os.Args[1], extract(bin, loader(sink)))
+	done := process(sink)
+	err = parser.New(fs, nil).Parse(os.Args[1])
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -47,29 +49,14 @@ func usage(err error) {
 }
 
 type loadFunc func(s *sample.Sample, dst string) error
+type extractFunc func(path string)
 
-func extract(bin string, load loadFunc) filepath.WalkFunc {
-	return func(path string, info os.FileInfo, err error) error {
-		out := path + EXT_OUT
-		switch {
-		case err != nil:
-			return err
-		case info.IsDir():
-			return nil
-		case filepath.Ext(path) != EXT_IN:
-			return nil
-		}
-		if err := run(bin, path, out, load); err != nil {
-			log.Println(err)
-		}
-		return nil
-	}
-}
+func (f extractFunc) Extract(path string) { f(path) }
 
 func run(bin, src, dst string, load loadFunc) error {
 	s := new(sample.Sample)
 	s.Path = src
-	if exists(dst) {
+	if fs.Exists(dst) {
 		return load(s, dst)
 	}
 	log.Printf("%s: %s: start", path.Base(bin), src)
@@ -82,7 +69,7 @@ func run(bin, src, dst string, load loadFunc) error {
 
 func loader(sink chan<- *sample.Sample) loadFunc {
 	return func(s *sample.Sample, dst string) error {
-		fd, err := os.Open(dst)
+		fd, err := fs.Open(dst)
 		if err != nil {
 			return fmt.Errorf("file: %s: %v", dst, err)
 		}
@@ -106,7 +93,7 @@ func loader(sink chan<- *sample.Sample) loadFunc {
 
 func which() (string, error) {
 	extractor := os.Getenv(ENV_EXTRACTOR)
-	fd, err := os.Open(extractor)
+	fd, err := fs.Open(extractor)
 	defer fd.Close()
 	switch {
 	case err != nil:
@@ -119,15 +106,11 @@ func which() (string, error) {
 	return extractor, nil
 }
 
-func exists(path string) bool {
-	_, err := os.Stat(path)
-	return !os.IsNotExist(err)
-}
-
-func analyze(input <-chan *sample.Sample, done chan<- struct{}) {
-	// 	defer close(done)
-	// 	coll := collection.New(engine.New(PARAM_PRECISION))
-	// 	for e := range input {
-	// 		coll.Append(e)
-	// 	}
+func process(input <-chan *sample.Sample) <-chan struct{} {
+	stats := engine.New(PARAM_PRECISION)
+	data := collection.New(stats)
+	for e := range input {
+		data.Append(e)
+	}
+	return analyze.New(data).Analyze()
 }
