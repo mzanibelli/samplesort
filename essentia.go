@@ -1,10 +1,8 @@
 package samplesort
 
 import (
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -13,6 +11,7 @@ import (
 	"path/filepath"
 
 	"samplesort/collection"
+	"samplesort/crypto"
 	"samplesort/engine"
 	"samplesort/sample"
 
@@ -113,12 +112,12 @@ func loader(sink chan<- *sample.Sample) loadFunc {
 
 func which() (string, error) {
 	extractor := os.Getenv(ENV_EXTRACTOR)
+	fd, err := os.Open(extractor)
+	defer fd.Close()
 	switch {
-	case extractor == "":
-		return "", fmt.Errorf("Please set %q environment variable", ENV_EXTRACTOR)
-	case !exists(extractor):
-		return "", fmt.Errorf("File %q not found", extractor)
-	case !checksum(extractor):
+	case err != nil:
+		return "", fmt.Errorf("Error opening executable: %v", err)
+	case !crypto.Check(fd, EXPECTED_SHA256):
 		return "", fmt.Errorf("SHA256 mismatch, expected version %q", EXPECTED_VERSION)
 	case len(os.Args) != 2:
 		return "", fmt.Errorf("Expected exactly one argument, got: %d", len(os.Args))
@@ -129,21 +128,6 @@ func which() (string, error) {
 func exists(path string) bool {
 	_, err := os.Stat(path)
 	return !os.IsNotExist(err)
-}
-
-func checksum(path string) bool {
-	fd, err := os.Open(path)
-	if err != nil {
-		return false
-	}
-	defer fd.Close()
-	h := sha256.New()
-	_, err = io.Copy(h, fd)
-	if err != nil {
-		return false
-	}
-	sum := fmt.Sprintf("%x", h.Sum(nil))
-	return sum == EXPECTED_SHA256
 }
 
 func analyze(input <-chan *sample.Sample, done chan<- struct{}) {

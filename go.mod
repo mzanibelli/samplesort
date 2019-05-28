@@ -10,6 +10,8 @@ require (
 
 replace samplesort/engine => ./engine
 
+replace samplesort/crypto => ./crypto
+
 replace samplesort/collection => ./collection
 
 replace samplesort/sample => ./sample
