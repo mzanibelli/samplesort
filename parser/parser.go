@@ -15,18 +15,18 @@ type Extractor interface {
 }
 
 type Parser struct {
-	w         Walker
-	e         Extractor
+	walker    Walker
+	extractor Extractor
 	whitelist string
 }
 
-func New(w Walker, e Extractor, whitelist string) *Parser {
-	return &Parser{w, e, whitelist}
+func New(walker Walker, extractor Extractor, whitelist string) *Parser {
+	return &Parser{walker, extractor, whitelist}
 }
 
 func (p *Parser) Parse(root string) error {
-	defer p.e.Close()
-	return p.w.Walk(root, p.visit)
+	defer p.extractor.Close()
+	return p.walker.Walk(root, p.visit)
 }
 
 func (p *Parser) visit(path string, info os.FileInfo, err error) error {
@@ -38,7 +38,7 @@ func (p *Parser) visit(path string, info os.FileInfo, err error) error {
 	case filepath.Ext(path) != p.whitelist:
 		return nil
 	default:
-		p.e.Extract(path)
+		p.extractor.Extract(path)
 	}
 	return nil
 }
