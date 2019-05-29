@@ -17,28 +17,34 @@ import (
 )
 
 const (
-	checksum  string  = "9c91599c118ad0f2eef14e7bbcc050d8c802d3175b8e1766c820c7ab5ce685f5"
-	version   string  = "v2.1_beta2-linux-i686"
-	env       string  = "ESSENTIA_EXTRACTOR"
-	whitelist string  = ".wav"
-	format    string  = ".json"
+	Checksum string = "9c91599c118ad0f2eef14e7bbcc050d8c802d3175b8e1766c820c7ab5ce685f5"
+	Version  string = "v2.1_beta2-linux-i686"
+
+	input     string  = ".wav"
+	output    string  = ".json"
 	precision float64 = 0.05
 	size      int     = 100
 	threshold int     = 0
 )
 
-func SampleSort() {
-	bin := which()
-	ext := extractor.New(fs, bin, decode, format)
-	par := parser.New(fs, ext, whitelist)
+func SampleSort(root, executable string, loggers ...*log.Logger) (fmt.Stringer, error) {
+	bin, err := which(executable)
+	if err != nil {
+		return nil, err
+	}
+
+	ext := extractor.New(fs, bin, decode, output)
+	par := parser.New(fs, ext, input)
 	eng := engine.New(precision)
 	col := collection.New(eng)
 
-	go par.Parse(os.Args[1])
+	go par.Parse(root)
 
 	go func() {
 		for err := range ext.Err() {
-			log.Println(err)
+			for _, l := range loggers {
+				l.Println(err)
+			}
 		}
 	}()
 
@@ -50,7 +56,26 @@ func SampleSort() {
 
 	analyze.New(col, size, threshold).Analyze()
 
-	fmt.Fprintln(os.Stdout, col)
+	return col, nil
+}
+
+func which(path string) (func(src, dst string) error, error) {
+	fd, err := fs.Open(path)
+	defer fd.Close()
+	switch {
+	case err != nil:
+		return nop,
+			fmt.Errorf("Error opening executable: %v", err)
+	case !crypto.Check(fd, Checksum):
+		return nop,
+			fmt.Errorf("SHA256 mismatch, expected version %q", Version)
+	case len(os.Args) != 2:
+		return nop,
+			fmt.Errorf("Expected exactly one argument, got: %d", len(os.Args)-1)
+	}
+	return func(src, dst string) error {
+		return exec.Command(path, src, dst).Run()
+	}, nil
 }
 
 func decode(content []byte) []map[string]interface{} {
@@ -66,26 +91,4 @@ func decode(content []byte) []map[string]interface{} {
 	return res
 }
 
-func which() func(src, dst string) error {
-	path := os.Getenv(env)
-	fd, err := fs.Open(path)
-	defer fd.Close()
-	switch {
-	case err != nil:
-		usage(fmt.Errorf("Error opening executable: %v", err))
-	case !crypto.Check(fd, checksum):
-		usage(fmt.Errorf("SHA256 mismatch, expected version %q", version))
-	case len(os.Args) != 2:
-		usage(fmt.Errorf("Expected exactly one argument, got: %d", len(os.Args)-1))
-	}
-	return func(src, dst string) error {
-		return exec.Command(path, src, dst).Run()
-	}
-}
-
-func usage(err error) {
-	fmt.Fprintf(os.Stderr, "Usage: %s=xxx %s FILENAME\n", env, os.Args[0])
-	fmt.Fprintf(os.Stderr, "Version: %s - %s\n", version, checksum)
-	fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
-	os.Exit(1)
-}
+func nop(src, dst string) error { return nil }
