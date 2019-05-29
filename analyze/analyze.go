@@ -4,15 +4,11 @@ import (
 	"github.com/bugra/kmeans"
 )
 
-const (
-	size      int = 100
-	threshold int = 0
-)
-
 type Analyze struct {
-	done chan struct{}
-	data Dataset
-	dist kmeans.DistanceFunction
+	data      Dataset
+	dist      kmeans.DistanceFunction
+	size      int
+	threshold int
 }
 
 func (a *Analyze) DistanceFunction(f kmeans.DistanceFunction) { a.dist = f }
@@ -22,23 +18,19 @@ type Dataset interface {
 	Sort([]int)
 }
 
-func New(data Dataset) *Analyze {
+func New(data Dataset, size, threshold int) *Analyze {
 	return &Analyze{
-		make(chan struct{}),
 		data,
 		kmeans.HammingDistance,
+		size,
+		threshold,
 	}
 }
 
-func (a *Analyze) Analyze() <-chan struct{} {
-	go func() {
-		defer close(a.done)
-		res, err := kmeans.Kmeans(
-			a.data.Features(), size, a.dist, threshold)
-		if err != nil {
-			panic(err)
-		}
-		a.data.Sort(res)
-	}()
-	return a.done
+func (a *Analyze) Analyze() {
+	res, err := kmeans.Kmeans(a.data.Features(), a.size, a.dist, a.threshold)
+	if err != nil {
+		panic(err)
+	}
+	a.data.Sort(res)
 }

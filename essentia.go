@@ -3,6 +3,7 @@ package samplesort
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 
@@ -22,6 +23,8 @@ const (
 	whitelist string  = ".wav"
 	format    string  = ".json"
 	precision float64 = 0.05
+	size      int     = 100
+	threshold int     = 0
 )
 
 func SampleSort() {
@@ -29,27 +32,38 @@ func SampleSort() {
 	ext := extractor.New(fs, bin, decode, format)
 	par := parser.New(fs, ext, whitelist)
 	eng := engine.New(precision)
-	data := collection.New(eng)
+	col := collection.New(eng)
+
 	go par.Parse(os.Args[1])
+
+	go func() {
+		for err := range ext.Err() {
+			log.Println(err)
+		}
+	}()
+
 	for e := range ext.Out() {
 		s := sample.New(e.String())
 		s.Flatten(e.Data()...)
-		data.Append(s)
+		col.Append(s)
 	}
-	<-analyze.New(data).Analyze()
+
+	analyze.New(col, size, threshold).Analyze()
+
+	fmt.Fprintln(os.Stdout, col)
 }
 
-func decode(content []byte, data []map[string]interface{}) error {
+func decode(content []byte) []map[string]interface{} {
 	type tmp struct {
 		LowLevel map[string]interface{} `json:"lowlevel"`
 		Tonal    map[string]interface{} `json:"tonal"`
 	}
 	t := new(tmp)
-	if err := json.Unmarshal(content, t); err != nil {
-		return err
+	res := make([]map[string]interface{}, 0, 2)
+	if err := json.Unmarshal(content, t); err == nil {
+		res = append(res, t.LowLevel, t.Tonal)
 	}
-	data = append(data, t.LowLevel, t.Tonal)
-	return nil
+	return res
 }
 
 func which() func(src, dst string) error {

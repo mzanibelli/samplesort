@@ -17,8 +17,8 @@ func TestExtractor(t *testing.T) {
 					hasRun = true
 					return nil
 				},
-				func(content []byte, data []map[string]interface{}) error {
-					return nil
+				func(content []byte) []map[string]interface{} {
+					return []map[string]interface{}{}
 				},
 				"",
 			)
@@ -41,9 +41,9 @@ func TestExtractor(t *testing.T) {
 				func(src, dst string) error {
 					return errors.New("foo")
 				},
-				func(content []byte, data []map[string]interface{}) error {
+				func(content []byte) []map[string]interface{} {
 					t.Error("loader was wrongfully invoked")
-					return nil
+					return []map[string]interface{}{}
 				},
 				"",
 			)
@@ -63,9 +63,9 @@ func TestExtractor(t *testing.T) {
 				func(src, dst string) error {
 					return nil
 				},
-				func(content []byte, data []map[string]interface{}) error {
+				func(content []byte) []map[string]interface{} {
 					t.Error("loader was wrongfully invoked")
-					return nil
+					return []map[string]interface{}{}
 				},
 				"",
 			)
@@ -86,11 +86,11 @@ func TestExtractor(t *testing.T) {
 				func(src, dst string) error {
 					return nil
 				},
-				func(actual []byte, data []map[string]interface{}) error {
+				func(actual []byte) []map[string]interface{} {
 					if !reflect.DeepEqual(expected, actual) {
 						t.Errorf("expected: %v, actual: %v", expected, actual)
 					}
-					return nil
+					return []map[string]interface{}{}
 				},
 				"",
 			)

@@ -16,7 +16,7 @@ type Storage interface {
 }
 
 type RunnerFunc func(src, dst string) error
-type DecodeFunc func(content []byte, data []map[string]interface{}) error
+type DecodeFunc func(content []byte) []map[string]interface{}
 
 func New(fs Storage, exec RunnerFunc, decode DecodeFunc, format string) *Extractor {
 	return &Extractor{fs, exec, decode, format, make(chan *payload), make(chan error), nil}
@@ -49,7 +49,7 @@ func (e *Extractor) load(p *payload, path string) {
 	if e.err != nil {
 		return
 	}
-	e.err = e.decode(content, p.data)
+	p.data = e.decode(content)
 }
 
 func (e *Extractor) Out() <-chan *payload { return e.stdout }

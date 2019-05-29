@@ -9,9 +9,8 @@ func TestAnalyze(t *testing.T) {
 	t.Run("it should process data and sort it afterwards",
 		func(t *testing.T) {
 			data := new(mockDataset)
-			SUT := analyze.New(data)
-			done := SUT.Analyze()
-			<-done
+			SUT := analyze.New(data, 2, 0)
+			SUT.Analyze()
 			expected := 2
 			actual := data.flag
 			if expected != actual {
