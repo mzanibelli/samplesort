@@ -5,7 +5,8 @@ type Extractor struct {
 	exec   RunnerFunc
 	decode DecodeFunc
 	format string
-	sink   chan *payload
+	stdout chan *payload
+	stderr chan error
 	err    error
 }
 
@@ -18,7 +19,7 @@ type RunnerFunc func(src, dst string) error
 type DecodeFunc func(content []byte, data []map[string]interface{}) error
 
 func New(fs Storage, exec RunnerFunc, decode DecodeFunc, format string) *Extractor {
-	return &Extractor{fs, exec, decode, format, make(chan *payload), nil}
+	return &Extractor{fs, exec, decode, format, make(chan *payload), make(chan error), nil}
 }
 
 func (e *Extractor) Extract(src string) {
@@ -32,9 +33,11 @@ func (e *Extractor) Extract(src string) {
 	}
 	e.load(s, dst)
 	if e.err == nil {
-		e.sink <- s
+		e.stdout <- s
+	} else {
+		e.stderr <- e.err
+		e.err = nil
 	}
-	e.err = nil
 }
 
 func (e *Extractor) load(p *payload, path string) {
@@ -49,8 +52,13 @@ func (e *Extractor) load(p *payload, path string) {
 	e.err = e.decode(content, p.data)
 }
 
-func (e *Extractor) Sink() <-chan *payload { return e.sink }
-func (e *Extractor) Close()                { close(e.sink) }
+func (e *Extractor) Out() <-chan *payload { return e.stdout }
+func (e *Extractor) Err() <-chan error    { return e.stderr }
+
+func (e *Extractor) Close() {
+	close(e.stdout)
+	close(e.stderr)
+}
 
 type payload struct {
 	path string

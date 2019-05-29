@@ -31,7 +31,7 @@ func SampleSort() {
 	eng := engine.New(precision)
 	data := collection.New(eng)
 	go par.Parse(os.Args[1])
-	for e := range ext.Sink() {
+	for e := range ext.Out() {
 		s := sample.New(e.String())
 		s.Flatten(e.Data()...)
 		data.Append(s)
