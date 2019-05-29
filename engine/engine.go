@@ -16,6 +16,7 @@ func New(precision float64) *Engine {
 func (e *Engine) Update(key string, n float64) {
 	if _, ok := e.stats[key]; !ok {
 		e.stats[key] = &stat{
+			name:   key,
 			values: make([]float64, 0),
 			Min:    +math.MaxFloat64,
 			Max:    -math.MaxFloat64,
@@ -35,8 +36,7 @@ func (e *Engine) Normalize(key string, n float64) float64 {
 	case s.Min == 0 && s.Max == 1:
 		return e.round(n)
 	default:
-		return e.round((n - s.Min) /
-			(s.Max - s.Min))
+		return e.round((n - s.Min) / (s.Max - s.Min))
 	}
 }
 
@@ -45,11 +45,14 @@ func (e *Engine) round(n float64) float64 {
 }
 
 type stat struct {
+	name   string
 	values []float64
 	Min    float64 `json:"min"`
 	Max    float64 `json:"max"`
 	Mean   float64 `json:"mean"`
 }
+
+func (s *stat) String() string { return s.name }
 
 func (s *stat) update(n float64) {
 	if s.values == nil {

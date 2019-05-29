@@ -28,13 +28,13 @@ const (
 	threshold int     = 0
 )
 
-type Result interface {
+type result interface {
 	fmt.Stringer
 	Size() int
 	Features() [][]float64
 }
 
-func SampleSort(root, executable string, loggers ...*log.Logger) (Result, error) {
+func SampleSort(root, executable string, loggers ...*log.Logger) (result, error) {
 	bin, err := which(executable)
 	if err != nil {
 		return nil, err
@@ -57,7 +57,6 @@ func SampleSort(root, executable string, loggers ...*log.Logger) (Result, error)
 	}()
 
 	wg := new(sync.WaitGroup)
-
 	for e := range ext.Out() {
 		wg.Add(1)
 		copy := e
@@ -68,7 +67,6 @@ func SampleSort(root, executable string, loggers ...*log.Logger) (Result, error)
 			col.Append(s)
 		}()
 	}
-
 	wg.Wait()
 
 	ana.Analyze()

@@ -5,20 +5,18 @@ import (
 )
 
 type Analyze struct {
-	data      Dataset
+	data      dataset
 	dist      kmeans.DistanceFunction
 	size      int
 	threshold int
 }
 
-func (a *Analyze) DistanceFunction(f kmeans.DistanceFunction) { a.dist = f }
-
-type Dataset interface {
+type dataset interface {
 	Features() [][]float64
 	Sort([]int)
 }
 
-func New(data Dataset, size, threshold int) *Analyze {
+func New(data dataset, size, threshold int) *Analyze {
 	return &Analyze{
 		data,
 		kmeans.HammingDistance,

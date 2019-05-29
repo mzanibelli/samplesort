@@ -1,23 +1,23 @@
 package extractor
 
+type storage interface {
+	ReadAll(name string) ([]byte, error)
+	Exists(name string) bool
+}
+
+type runnerFunc func(src, dst string) error
+type decodeFunc func(content []byte) []map[string]interface{}
+
 type Extractor struct {
-	fs     Storage
-	exec   RunnerFunc
-	decode DecodeFunc
+	fs     storage
+	exec   runnerFunc
+	decode decodeFunc
 	format string
 	stdout chan *payload
 	stderr chan error
 }
 
-type Storage interface {
-	ReadAll(name string) ([]byte, error)
-	Exists(name string) bool
-}
-
-type RunnerFunc func(src, dst string) error
-type DecodeFunc func(content []byte) []map[string]interface{}
-
-func New(fs Storage, exec RunnerFunc, decode DecodeFunc, format string) *Extractor {
+func New(fs storage, exec runnerFunc, decode decodeFunc, format string) *Extractor {
 	return &Extractor{fs, exec, decode, format, make(chan *payload), make(chan error)}
 }
 

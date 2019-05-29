@@ -5,22 +5,22 @@ import (
 	"path/filepath"
 )
 
-type Walker interface {
+type walker interface {
 	Walk(name string, f filepath.WalkFunc) error
 }
 
-type Extractor interface {
+type extractor interface {
 	Extract(name string)
 	Close()
 }
 
 type Parser struct {
-	walker    Walker
-	extractor Extractor
+	walker    walker
+	extractor extractor
 	whitelist string
 }
 
-func New(walker Walker, extractor Extractor, whitelist string) *Parser {
+func New(walker walker, extractor extractor, whitelist string) *Parser {
 	return &Parser{walker, extractor, whitelist}
 }
 
