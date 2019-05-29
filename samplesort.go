@@ -27,7 +27,13 @@ const (
 	threshold int     = 0
 )
 
-func SampleSort(root, executable string, loggers ...*log.Logger) (fmt.Stringer, error) {
+type Result interface {
+	fmt.Stringer
+	Size() int
+	Features() [][]float64
+}
+
+func SampleSort(root, executable string, loggers ...*log.Logger) (Result, error) {
 	bin, err := which(executable)
 	if err != nil {
 		return nil, err

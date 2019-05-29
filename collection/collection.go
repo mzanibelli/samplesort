@@ -58,3 +58,7 @@ func (c *Collection) String() string {
 	}
 	return b.String()
 }
+
+func (c *Collection) Size() int {
+	return len(c.entities)
+}

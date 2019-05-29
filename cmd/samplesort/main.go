@@ -5,6 +5,11 @@ import (
 	"log"
 	"os"
 	"samplesort"
+
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/plotutil"
+	"gonum.org/v1/plot/vg"
 )
 
 const (
@@ -13,13 +18,41 @@ const (
 
 func main() {
 	logger := log.New(os.Stderr, "", log.LstdFlags)
-	res, err := samplesort.SampleSort(
+
+	col, err := samplesort.SampleSort(
 		os.Args[1],
 		os.Getenv(env),
 		logger,
 	)
+
 	usage(err)
-	fmt.Fprintln(os.Stdout, res)
+
+	p, err := plot.New()
+	if err != nil {
+		panic(err)
+	}
+
+	p.Title.Text = "SampleSort"
+	p.X.Label.Text = "Features"
+	p.Y.Label.Text = "Value"
+
+	feats := col.Features()
+
+	for index, sample := range feats {
+		row := make(plotter.XYs, len(feats))
+		for i := range row {
+			row[i].X = float64(i)
+			row[i].Y = sample[i]
+		}
+		err = plotutil.AddLinePoints(p, index, row)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	if err := p.Save(4*vg.Inch, 4*vg.Inch, "/tmp/a.png"); err != nil {
+		panic(err)
+	}
 }
 
 func usage(err error) {
