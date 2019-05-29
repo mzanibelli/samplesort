@@ -23,7 +23,7 @@ func New(fs Storage, exec RunnerFunc, decode DecodeFunc, format string) *Extract
 }
 
 func (e *Extractor) Extract(src string) {
-	s := &payload{
+	p := &payload{
 		path: src,
 		data: make([]map[string]interface{}, 0),
 	}
@@ -31,9 +31,9 @@ func (e *Extractor) Extract(src string) {
 	if !e.fs.Exists(dst) {
 		e.err = e.exec(src, dst)
 	}
-	e.load(s, dst)
+	e.load(p, dst)
 	if e.err == nil {
-		e.stdout <- s
+		e.stdout <- p
 	} else {
 		e.stderr <- e.err
 		e.err = nil
