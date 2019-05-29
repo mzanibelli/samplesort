@@ -3,7 +3,6 @@ package samplesort
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 
@@ -31,9 +30,7 @@ func SampleSort() {
 	par := parser.New(fs, ext, whitelist)
 	eng := engine.New(precision)
 	data := collection.New(eng)
-	if err := par.Parse(os.Args[1]); err != nil {
-		log.Fatal(err)
-	}
+	go par.Parse(os.Args[1])
 	for e := range ext.Sink() {
 		s := sample.New(e.String())
 		s.Flatten(e.Data()...)
