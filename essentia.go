@@ -76,7 +76,7 @@ func which() func(src, dst string) error {
 	case !crypto.Check(fd, checksum):
 		usage(fmt.Errorf("SHA256 mismatch, expected version %q", version))
 	case len(os.Args) != 2:
-		usage(fmt.Errorf("Expected exactly one argument, got: %d", len(os.Args)))
+		usage(fmt.Errorf("Expected exactly one argument, got: %d", len(os.Args)-1))
 	}
 	return func(src, dst string) error {
 		return exec.Command(path, src, dst).Run()
