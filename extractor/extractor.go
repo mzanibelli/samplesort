@@ -7,7 +7,6 @@ type Extractor struct {
 	format string
 	stdout chan *payload
 	stderr chan error
-	err    error
 }
 
 type Storage interface {
@@ -19,37 +18,41 @@ type RunnerFunc func(src, dst string) error
 type DecodeFunc func(content []byte) []map[string]interface{}
 
 func New(fs Storage, exec RunnerFunc, decode DecodeFunc, format string) *Extractor {
-	return &Extractor{fs, exec, decode, format, make(chan *payload), make(chan error), nil}
+	return &Extractor{fs, exec, decode, format, make(chan *payload), make(chan error)}
 }
 
 func (e *Extractor) Extract(src string) {
+	var err error
 	p := &payload{
 		path: src,
 		data: make([]map[string]interface{}, 0),
 	}
+
 	dst := src + e.format
 	if !e.fs.Exists(dst) {
-		e.err = e.exec(src, dst)
+		err = e.exec(src, dst)
 	}
-	e.load(p, dst)
-	if e.err == nil {
-		e.stdout <- p
-	} else {
-		e.stderr <- e.err
-		e.err = nil
+	if err != nil {
+		e.stderr <- err
+		return
 	}
+
+	err = e.load(p, dst)
+	if err != nil {
+		e.stderr <- err
+		return
+	}
+
+	e.stdout <- p
 }
 
-func (e *Extractor) load(p *payload, path string) {
-	if e.err != nil {
-		return
-	}
-	var content []byte
-	content, e.err = e.fs.ReadAll(path)
-	if e.err != nil {
-		return
+func (e *Extractor) load(p *payload, path string) error {
+	content, err := e.fs.ReadAll(path)
+	if err != nil {
+		return err
 	}
 	p.data = e.decode(content)
+	return nil
 }
 
 func (e *Extractor) Out() <-chan *payload { return e.stdout }

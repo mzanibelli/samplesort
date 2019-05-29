@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 )
 
 type Entity interface {
@@ -19,13 +20,16 @@ type Engine interface {
 type Collection struct {
 	entities []Entity
 	engine   Engine
+	mu       *sync.Mutex
 }
 
 func New(e Engine) *Collection {
-	return &Collection{make([]Entity, 0), e}
+	return &Collection{make([]Entity, 0), e, new(sync.Mutex)}
 }
 
 func (c *Collection) Append(e Entity) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.entities = append(c.entities, e)
 	for key, val := range e.Data() {
 		c.engine.Update(key, val)

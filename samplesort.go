@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"sync"
 
 	"samplesort/analyze"
 	"samplesort/collection"
@@ -43,6 +44,7 @@ func SampleSort(root, executable string, loggers ...*log.Logger) (Result, error)
 	par := parser.New(fs, ext, input)
 	eng := engine.New(precision)
 	col := collection.New(eng)
+	ana := analyze.New(col, size, threshold)
 
 	go par.Parse(root)
 
@@ -54,13 +56,22 @@ func SampleSort(root, executable string, loggers ...*log.Logger) (Result, error)
 		}
 	}()
 
+	wg := new(sync.WaitGroup)
+
 	for e := range ext.Out() {
-		s := sample.New(e.String())
-		s.Flatten(e.Data()...)
-		col.Append(s)
+		wg.Add(1)
+		copy := e
+		go func() {
+			defer wg.Done()
+			s := sample.New(copy.String())
+			s.Flatten(copy.Data()...)
+			col.Append(s)
+		}()
 	}
 
-	analyze.New(col, size, threshold).Analyze()
+	wg.Wait()
+
+	ana.Analyze()
 
 	return col, nil
 }
