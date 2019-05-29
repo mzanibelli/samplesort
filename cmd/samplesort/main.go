@@ -39,12 +39,12 @@ func main() {
 	feats := col.Features()
 
 	for index, sample := range feats {
-		row := make(plotter.XYs, len(feats))
+		row := make(plotter.XYs, len(sample))
 		for i := range row {
 			row[i].X = float64(i)
 			row[i].Y = sample[i]
 		}
-		err = plotutil.AddLinePoints(p, index, row)
+		err = plotutil.AddLinePoints(p, string(index), row)
 		if err != nil {
 			panic(err)
 		}
