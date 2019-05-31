@@ -9,10 +9,12 @@ import (
 
 type entity interface {
 	fmt.Stringer
-	Data() map[string]float64
+	Keys() []string
+	Get(key string) float64
 }
 
 type engine interface {
+	fmt.Stringer
 	Update(key string, n float64)
 	Normalize(key string, n float64) float64
 }
@@ -31,16 +33,17 @@ func (c *Collection) Append(e entity) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.entities = append(c.entities, e)
-	for key, val := range e.Data() {
-		c.engine.Update(key, val)
+	for _, k := range e.Keys() {
+		c.engine.Update(k, e.Get(k))
 	}
 }
 
 func (c *Collection) Features() [][]float64 {
 	result := make([][]float64, len(c.entities), len(c.entities))
 	for i, e := range c.entities {
-		for key, val := range e.Data() {
-			result[i] = append(result[i], c.engine.Normalize(key, val))
+		for _, k := range e.Keys() {
+			n := c.engine.Normalize(k, e.Get(k))
+			result[i] = append(result[i], n)
 		}
 	}
 	return result

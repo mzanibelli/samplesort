@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"encoding/json"
 	"math"
 )
 
@@ -38,6 +39,11 @@ func (e *Engine) Normalize(key string, n float64) float64 {
 	default:
 		return e.round((n - s.Min) / (s.Max - s.Min))
 	}
+}
+
+func (e *Engine) String() string {
+	json, _ := json.MarshalIndent(e.stats, "", " ")
+	return string(json)
 }
 
 func (e *Engine) round(n float64) float64 {

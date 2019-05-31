@@ -48,22 +48,14 @@ type testEntity struct {
 	val float64
 }
 
-func (t testEntity) Data() map[string]float64 {
-	return map[string]float64{t.key: t.val}
-}
-
-func (t testEntity) String() string {
-	return t.key
-}
+func (t testEntity) Keys() []string         { return []string{t.key} }
+func (t testEntity) Get(key string) float64 { return t.val }
+func (t testEntity) String() string         { return t.key }
 
 type testEngine struct {
 	updates map[string]float64
 }
 
-func (t *testEngine) Update(key string, val float64) {
-	t.updates[key] = val
-}
-
-func (t *testEngine) Normalize(key string, n float64) float64 {
-	return n * 2
-}
+func (t *testEngine) String() string                          { return "" }
+func (t *testEngine) Update(key string, val float64)          { t.updates[key] = val }
+func (t *testEngine) Normalize(key string, n float64) float64 { return n * 2 }
