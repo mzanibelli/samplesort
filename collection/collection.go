@@ -9,6 +9,7 @@ import (
 
 type entity interface {
 	fmt.Stringer
+	Keys() []string
 	Values() []float64
 }
 
@@ -28,11 +29,35 @@ func (c *Collection) Append(e entity) {
 }
 
 func (c *Collection) Features() [][]float64 {
-	result := make([][]float64, len(c.entities), len(c.entities))
-	for i := range result {
-		result[i] = c.entities[i].Values()
+	type tmp struct {
+		count   int
+		indices []int
 	}
-	return result
+	cnts := make(map[string]*tmp, 0)
+	for i, e := range c.entities {
+		for j, key := range e.Keys() {
+			_, ok := cnts[key]
+			if !ok {
+				cnts[key] = &tmp{0, make(
+					[]int,
+					len(c.entities), len(c.entities),
+				)}
+			}
+			cnts[key].count++
+			cnts[key].indices[i] = j
+		}
+	}
+	res := make([][]float64, len(c.entities), len(c.entities))
+	for i := range res {
+		res[i] = make([]float64, 0)
+		values := c.entities[i].Values()
+		for _, cnt := range cnts {
+			if cnt.count == len(c.entities) {
+				res[i] = append(res[i], values[cnt.indices[i]])
+			}
+		}
+	}
+	return res
 }
 
 func (c *Collection) Sort(centers []int) {
