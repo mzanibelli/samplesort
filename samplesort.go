@@ -21,11 +21,10 @@ const (
 	Checksum string = "9c91599c118ad0f2eef14e7bbcc050d8c802d3175b8e1766c820c7ab5ce685f5"
 	Version  string = "v2.1_beta2-linux-i686"
 
-	input     string  = ".wav"
-	output    string  = ".json"
-	precision float64 = 0.05
-	size      int     = 100
-	threshold int     = 0
+	input     string = ".wav"
+	output    string = ".json"
+	size      int    = 100
+	threshold int    = 0
 )
 
 type result interface {
@@ -42,9 +41,9 @@ func SampleSort(root, executable string, loggers ...*log.Logger) (result, error)
 
 	ext := extractor.New(fs, bin, decode, output)
 	par := parser.New(fs, ext, input)
-	eng := engine.New(precision)
-	col := collection.New(eng)
-	ana := analyze.New(col, size, threshold)
+	col := collection.New()
+	eng := engine.New()
+	ana := analyze.New(col, eng, size, threshold)
 
 	go par.Parse(root)
 
@@ -93,17 +92,18 @@ func which(path string) (func(src, dst string) error, error) {
 	}, nil
 }
 
-func decode(content []byte) []map[string]interface{} {
+func decode(content []byte) ([]map[string]interface{}, error) {
 	type tmp struct {
 		LowLevel map[string]interface{} `json:"lowlevel"`
 		Tonal    map[string]interface{} `json:"tonal"`
 	}
 	t := new(tmp)
 	res := make([]map[string]interface{}, 0, 2)
-	if err := json.Unmarshal(content, t); err == nil {
-		res = append(res, t.LowLevel, t.Tonal)
+	if err := json.Unmarshal(content, t); err != nil {
+		return res, err
 	}
-	return res
+	res = append(res, t.LowLevel, t.Tonal)
+	return res, nil
 }
 
 func nop(src, dst string) error { return nil }

@@ -38,19 +38,27 @@ func main() {
 
 	feats := col.Features()
 
-	for index, sample := range feats {
+	fmt.Println(col)
+
+	var items int = 2
+
+	logger.Println("start plotting...")
+	lines := make([]interface{}, items)
+	for index, sample := range feats[:items] {
 		row := make(plotter.XYs, len(sample))
 		for i := range row {
 			row[i].X = float64(i)
 			row[i].Y = sample[i]
 		}
-		err = plotutil.AddLinePoints(p, string(index), row)
-		if err != nil {
-			panic(err)
-		}
+		lines[index] = row
+	}
+	err = plotutil.AddLinePoints(p, lines...)
+	if err != nil {
+		panic(err)
 	}
 
-	if err := p.Save(4*vg.Inch, 4*vg.Inch, "/tmp/a.png"); err != nil {
+	logger.Println("saving to file...")
+	if err := p.Save(20*vg.Inch, 20*vg.Inch, "/tmp/a.png"); err != nil {
 		panic(err)
 	}
 }

@@ -17,8 +17,8 @@ func TestExtractor(t *testing.T) {
 					hasRun = true
 					return nil
 				},
-				func(content []byte) []map[string]interface{} {
-					return []map[string]interface{}{}
+				func(content []byte) ([]map[string]interface{}, error) {
+					return []map[string]interface{}{}, nil
 				},
 				"",
 			)
@@ -41,9 +41,9 @@ func TestExtractor(t *testing.T) {
 				func(src, dst string) error {
 					return errors.New("foo")
 				},
-				func(content []byte) []map[string]interface{} {
+				func(content []byte) ([]map[string]interface{}, error) {
 					t.Error("loader was wrongfully invoked")
-					return []map[string]interface{}{}
+					return []map[string]interface{}{}, nil
 				},
 				"",
 			)
@@ -63,9 +63,9 @@ func TestExtractor(t *testing.T) {
 				func(src, dst string) error {
 					return nil
 				},
-				func(content []byte) []map[string]interface{} {
+				func(content []byte) ([]map[string]interface{}, error) {
 					t.Error("loader was wrongfully invoked")
-					return []map[string]interface{}{}
+					return []map[string]interface{}{}, nil
 				},
 				"",
 			)
@@ -86,11 +86,11 @@ func TestExtractor(t *testing.T) {
 				func(src, dst string) error {
 					return nil
 				},
-				func(actual []byte) []map[string]interface{} {
+				func(actual []byte) ([]map[string]interface{}, error) {
 					if !reflect.DeepEqual(expected, actual) {
 						t.Errorf("expected: %v, actual: %v", expected, actual)
 					}
-					return []map[string]interface{}{}
+					return []map[string]interface{}{}, nil
 				},
 				"",
 			)
@@ -100,6 +100,27 @@ func TestExtractor(t *testing.T) {
 				break
 			case err := <-SUT.Err():
 				t.Error(err)
+				break
+			}
+		})
+	t.Run("it should not send data if there was a decoding error",
+		func(t *testing.T) {
+			SUT := extractor.New(
+				&mockFS{[]byte{}, nil, true},
+				func(src, dst string) error {
+					return nil
+				},
+				func(content []byte) ([]map[string]interface{}, error) {
+					return []map[string]interface{}{}, errors.New("foo")
+				},
+				"",
+			)
+			go SUT.Extract("")
+			select {
+			case <-SUT.Out():
+				t.Error("received output instead of error")
+				break
+			case <-SUT.Err():
 				break
 			}
 		})

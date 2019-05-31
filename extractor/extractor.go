@@ -6,7 +6,7 @@ type storage interface {
 }
 
 type runnerFunc func(src, dst string) error
-type decodeFunc func(content []byte) []map[string]interface{}
+type decodeFunc func(content []byte) ([]map[string]interface{}, error)
 
 type Extractor struct {
 	fs     storage
@@ -51,7 +51,10 @@ func (e *Extractor) load(p *payload, path string) error {
 	if err != nil {
 		return err
 	}
-	p.data = e.decode(content)
+	p.data, err = e.decode(content)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -8,23 +8,15 @@ import (
 
 func TestCollection(t *testing.T) {
 	t.Run("it should compute features", func(t *testing.T) {
-		SUT, _ := makeSUT()
-		expected := [][]float64{{2.0}, {4.0}}
+		SUT := makeSUT()
+		expected := [][]float64{{1}, {2}}
 		actual := SUT.Features()
 		if !reflect.DeepEqual(expected, actual) {
 			t.Errorf("expected: %v, actual: %v", expected, actual)
 		}
 	})
-	t.Run("it should trigger updates", func(t *testing.T) {
-		_, e := makeSUT()
-		expected := map[string]float64{"foo": 1.0, "bar": 2.0}
-		actual := e.updates
-		if !reflect.DeepEqual(expected, actual) {
-			t.Errorf("expected: %v, actual: %v", expected, actual)
-		}
-	})
 	t.Run("it should sort entities", func(t *testing.T) {
-		SUT, _ := makeSUT()
+		SUT := makeSUT()
 		SUT.Sort([]int{1, 0})
 		expected := "barfoo"
 		actual := SUT.String()
@@ -34,13 +26,11 @@ func TestCollection(t *testing.T) {
 	})
 }
 
-func makeSUT() (*collection.Collection, *testEngine) {
-	e := new(testEngine)
-	e.updates = make(map[string]float64)
-	SUT := collection.New(e)
+func makeSUT() *collection.Collection {
+	SUT := collection.New()
 	SUT.Append(testEntity{"foo", 1.0})
 	SUT.Append(testEntity{"bar", 2.0})
-	return SUT, e
+	return SUT
 }
 
 type testEntity struct {
@@ -48,14 +38,5 @@ type testEntity struct {
 	val float64
 }
 
-func (t testEntity) Keys() []string         { return []string{t.key} }
-func (t testEntity) Get(key string) float64 { return t.val }
-func (t testEntity) String() string         { return t.key }
-
-type testEngine struct {
-	updates map[string]float64
-}
-
-func (t *testEngine) String() string                          { return "" }
-func (t *testEngine) Update(key string, val float64)          { t.updates[key] = val }
-func (t *testEngine) Normalize(key string, n float64) float64 { return n * 2 }
+func (t testEntity) Values() []float64 { return []float64{t.val} }
+func (t testEntity) String() string    { return t.key }

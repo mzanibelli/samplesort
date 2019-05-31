@@ -1,39 +1,44 @@
 package engine_test
 
 import (
+	"math"
+	"reflect"
 	"samplesort/engine"
 	"testing"
 )
 
 func TestEngine(t *testing.T) {
 	cases := []struct {
-		key    string
-		input  float64
-		output float64
+		name   string
+		input  [][]float64
+		output []float64
 	}{
-		{"foo", 0, 0.5},
-		{"bar", 0.5, 0.5},
-		{"baz", 7.5, 0.75},
+		{
+			name: "foo",
+			input: [][]float64{
+				{10, 1},
+				{20, 2},
+				{30, 3},
+				{40, 4},
+				{50, 5},
+			},
+			output: []float64{math.Sqrt(200), math.Sqrt(2)},
+		},
 	}
-	SUT := makeSUT()
 	for _, c := range cases {
-		t.Run(c.key, func(t *testing.T) {
+		t.Run(c.name, func(t *testing.T) {
+			SUT := makeSUT(c.input)
 			expected := c.output
-			actual := SUT.Normalize(c.key, c.input)
-			if expected != actual {
-				t.Errorf("expected: %.10f, actual: %.10f", expected, actual)
+			actual := SUT.SDs()
+			if !reflect.DeepEqual(expected, actual) {
+				t.Errorf("expected: %v, actual: %v", expected, actual)
 			}
 		})
 	}
 }
 
-func makeSUT() *engine.Engine {
-	e := engine.New(0.01)
-	e.Update("foo", -1)
-	e.Update("foo", 1)
-	e.Update("bar", 0)
-	e.Update("bar", 1)
-	e.Update("baz", 0)
-	e.Update("baz", 10)
-	return e
+func makeSUT(data [][]float64) *engine.Engine {
+	SUT := engine.New()
+	SUT.Compute(data)
+	return SUT
 }

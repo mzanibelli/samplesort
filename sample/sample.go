@@ -31,23 +31,6 @@ func (s *Sample) Flatten(chunks ...map[string]interface{}) {
 	}
 }
 
-func (s *Sample) Get(key string) float64 {
-	for _, f := range s.features {
-		if f.key == key {
-			return f.value
-		}
-	}
-	panic("do not try to guess keys")
-}
-
-func (s *Sample) Keys() []string {
-	res := make([]string, len(s.features))
-	for i := range res {
-		res[i] = s.features[i].key
-	}
-	return res
-}
-
 func (s *Sample) Values() []float64 {
 	res := make([]float64, len(s.features))
 	for i := range res {
