@@ -17,6 +17,7 @@ type filesystem interface {
 	Exists(name string) bool
 	Walk(name string, f filepath.WalkFunc) error
 	ReadAll(name string) ([]byte, error)
+	WriteAll(name string, content []byte) error
 }
 
 type file interface {
@@ -44,4 +45,8 @@ func (osFS) ReadAll(name string) ([]byte, error) {
 		return []byte{}, err
 	}
 	return ioutil.ReadAll(fd)
+}
+
+func (osFS) WriteAll(name string, content []byte) error {
+	return ioutil.WriteFile(name, content, 0644)
 }

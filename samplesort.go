@@ -1,7 +1,6 @@
 package samplesort
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -9,6 +8,7 @@ import (
 	"sync"
 
 	"samplesort/analyze"
+	"samplesort/cache"
 	"samplesort/collection"
 	"samplesort/crypto"
 	"samplesort/engine"
@@ -39,7 +39,8 @@ func SampleSort(root, executable string, loggers ...*log.Logger) (result, error)
 		return nil, err
 	}
 
-	ext := extractor.New(fs, bin, decode, output)
+	cac := cache.New(fs, output)
+	ext := extractor.New(cac, bin)
 	par := parser.New(fs, ext, input)
 	col := collection.New()
 	eng := engine.New()
@@ -62,7 +63,7 @@ func SampleSort(root, executable string, loggers ...*log.Logger) (result, error)
 		go func() {
 			defer wg.Done()
 			s := sample.New(copy.String())
-			s.Flatten(copy.Data()...)
+			s.Flatten(copy.Data())
 			col.Append(s)
 		}()
 	}
@@ -73,7 +74,7 @@ func SampleSort(root, executable string, loggers ...*log.Logger) (result, error)
 	return col, nil
 }
 
-func which(path string) (func(src, dst string) error, error) {
+func which(path string) (func(src string) ([]byte, error), error) {
 	fd, err := fs.Open(path)
 	defer fd.Close()
 	switch {
@@ -87,23 +88,16 @@ func which(path string) (func(src, dst string) error, error) {
 		return nop,
 			fmt.Errorf("Expected exactly one argument, got: %d", len(os.Args)-1)
 	}
-	return func(src, dst string) error {
-		return exec.Command(path, src, dst).Run()
+	return func(src string) ([]byte, error) {
+		dst := path + output
+		err := exec.Command(path, src, dst).Run()
+		if err != nil {
+			return []byte{}, err
+		}
+		return fs.ReadAll(dst)
 	}, nil
 }
 
-func decode(content []byte) ([]map[string]interface{}, error) {
-	type tmp struct {
-		LowLevel map[string]interface{} `json:"lowlevel"`
-		Tonal    map[string]interface{} `json:"tonal"`
-	}
-	t := new(tmp)
-	res := make([]map[string]interface{}, 0, 2)
-	if err := json.Unmarshal(content, t); err != nil {
-		return res, err
-	}
-	res = append(res, t.LowLevel, t.Tonal)
-	return res, nil
+func nop(string) ([]byte, error) {
+	return []byte{}, nil
 }
-
-func nop(src, dst string) error { return nil }

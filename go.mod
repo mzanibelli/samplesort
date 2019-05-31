@@ -12,6 +12,8 @@ replace samplesort/engine => ./engine
 
 replace samplesort/parser => ./parser
 
+replace samplesort/cache => ./cache
+
 replace samplesort/analyze => ./analyze
 
 replace samplesort/crypto => ./crypto

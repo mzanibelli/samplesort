@@ -2,120 +2,43 @@ package extractor_test
 
 import (
 	"errors"
-	"reflect"
 	"samplesort/extractor"
 	"testing"
 )
 
 func TestExtractor(t *testing.T) {
-	t.Run("it should execute the runner if no data file is found",
+	t.Run("it should pass src to build func",
 		func(t *testing.T) {
-			hasRun := false
+			ok := false
 			SUT := extractor.New(
-				&mockFS{[]byte{}, nil, false},
-				func(src, dst string) error {
-					hasRun = true
-					return nil
-				},
-				func(content []byte) ([]map[string]interface{}, error) {
-					return []map[string]interface{}{}, nil
-				},
-				"",
-			)
-			go SUT.Extract("")
-			select {
-			case <-SUT.Out():
-				if !hasRun {
-					t.Error("runner was not invoked")
-				}
-				break
-			case err := <-SUT.Err():
-				t.Error(err)
-				break
-			}
-		})
-	t.Run("it should not execute the loader if there was an error with the runner",
-		func(t *testing.T) {
-			SUT := extractor.New(
-				&mockFS{[]byte{}, nil, false},
-				func(src, dst string) error {
-					return errors.New("foo")
-				},
-				func(content []byte) ([]map[string]interface{}, error) {
-					t.Error("loader was wrongfully invoked")
-					return []map[string]interface{}{}, nil
-				},
-				"",
-			)
-			go SUT.Extract("")
-			select {
-			case <-SUT.Out():
-				t.Error("received output instead of error")
-				break
-			case <-SUT.Err():
-				break
-			}
-		})
-	t.Run("it should not execute the loader if there was an error reading the data file",
-		func(t *testing.T) {
-			SUT := extractor.New(
-				&mockFS{[]byte{}, errors.New("foo"), true},
-				func(src, dst string) error {
-					return nil
-				},
-				func(content []byte) ([]map[string]interface{}, error) {
-					t.Error("loader was wrongfully invoked")
-					return []map[string]interface{}{}, nil
-				},
-				"",
-			)
-			go SUT.Extract("")
-			select {
-			case <-SUT.Out():
-				t.Error("received output instead of error")
-				break
-			case <-SUT.Err():
-				break
-			}
-		})
-	t.Run("it should decode the content of the data file",
-		func(t *testing.T) {
-			expected := []byte("hello world")
-			SUT := extractor.New(
-				&mockFS{expected, nil, true},
-				func(src, dst string) error {
-					return nil
-				},
-				func(actual []byte) ([]map[string]interface{}, error) {
-					if !reflect.DeepEqual(expected, actual) {
-						t.Errorf("expected: %v, actual: %v", expected, actual)
+				&mockCache{nil},
+				func(src string) ([]byte, error) {
+					ok = true
+					if src != "hello" {
+						t.Error("path not provided to build func")
 					}
-					return []map[string]interface{}{}, nil
+					return []byte{}, nil
 				},
-				"",
 			)
-			go SUT.Extract("")
+			go SUT.Extract("hello")
 			select {
 			case <-SUT.Out():
 				break
-			case err := <-SUT.Err():
-				t.Error(err)
+			case <-SUT.Err():
+				t.Error("received error instead of output")
 				break
 			}
+			if !ok {
+				t.Error("build func was not called")
+			}
 		})
-	t.Run("it should not send data if there was a decoding error",
+	t.Run("it should send an error if fetch fails",
 		func(t *testing.T) {
 			SUT := extractor.New(
-				&mockFS{[]byte{}, nil, true},
-				func(src, dst string) error {
-					return nil
-				},
-				func(content []byte) ([]map[string]interface{}, error) {
-					return []map[string]interface{}{}, errors.New("foo")
-				},
-				"",
+				&mockCache{errors.New("foo")},
+				func(string) ([]byte, error) { return []byte{}, nil },
 			)
-			go SUT.Extract("")
+			go SUT.Extract("hello")
 			select {
 			case <-SUT.Out():
 				t.Error("received output instead of error")
@@ -124,13 +47,32 @@ func TestExtractor(t *testing.T) {
 				break
 			}
 		})
+	t.Run("it should send output if fetch works",
+		func(t *testing.T) {
+			SUT := extractor.New(
+				&mockCache{nil},
+				func(string) ([]byte, error) { return []byte{}, nil },
+			)
+			go SUT.Extract("hello")
+			select {
+			case <-SUT.Out():
+				break
+			case <-SUT.Err():
+				t.Error("received error instead of output")
+				break
+			}
+		})
 }
 
-type mockFS struct {
-	content []byte
-	err     error
-	exists  bool
-}
+type mockCache struct{ err error }
 
-func (m *mockFS) ReadAll(name string) ([]byte, error) { return m.content, m.err }
-func (m *mockFS) Exists(name string) bool             { return m.exists }
+func (m *mockCache) Fetch(
+	key string,
+	target interface{},
+	build func() ([]byte, error),
+) error {
+	if m.err == nil {
+		build()
+	}
+	return m.err
+}

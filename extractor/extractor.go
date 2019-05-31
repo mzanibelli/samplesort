@@ -2,62 +2,36 @@ package extractor
 
 import "fmt"
 
-type storage interface {
-	ReadAll(name string) ([]byte, error)
-	Exists(name string) bool
+type cache interface {
+	Fetch(key string, target interface{}, build func() ([]byte, error)) error
 }
 
-type runnerFunc func(src, dst string) error
-type decodeFunc func(content []byte) ([]map[string]interface{}, error)
+type buildFunc func(src string) ([]byte, error)
 
 type Extractor struct {
-	fs     storage
-	exec   runnerFunc
-	decode decodeFunc
-	format string
+	cache  cache
+	build  buildFunc
 	stdout chan *payload
 	stderr chan error
 }
 
-func New(fs storage, exec runnerFunc, decode decodeFunc, format string) *Extractor {
-	return &Extractor{fs, exec, decode, format, make(chan *payload), make(chan error)}
+func New(cache cache, build buildFunc) *Extractor {
+	return &Extractor{cache, build, make(chan *payload), make(chan error)}
 }
 
 func (e *Extractor) Extract(src string) {
-	var err error
 	p := &payload{
 		path: src,
-		data: make([]map[string]interface{}, 0),
+		data: make(map[string]interface{}, 0),
 	}
-
-	dst := src + e.format
-	if !e.fs.Exists(dst) {
-		err = e.exec(src, dst)
-	}
+	err := e.cache.Fetch(src, &(p.data), func() ([]byte, error) {
+		return e.build(src)
+	})
 	if err != nil {
 		e.stderr <- fmt.Errorf("%s: %v", src, err)
 		return
 	}
-
-	err = e.load(p, dst)
-	if err != nil {
-		e.stderr <- fmt.Errorf("%s: %v", dst, err)
-		return
-	}
-
 	e.stdout <- p
-}
-
-func (e *Extractor) load(p *payload, path string) error {
-	content, err := e.fs.ReadAll(path)
-	if err != nil {
-		return err
-	}
-	p.data, err = e.decode(content)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (e *Extractor) Out() <-chan *payload { return e.stdout }
@@ -70,8 +44,8 @@ func (e *Extractor) Close() {
 
 type payload struct {
 	path string
-	data []map[string]interface{}
+	data map[string]interface{}
 }
 
-func (p *payload) String() string                 { return p.path }
-func (p *payload) Data() []map[string]interface{} { return p.data }
+func (p *payload) String() string               { return p.path }
+func (p *payload) Data() map[string]interface{} { return p.data }

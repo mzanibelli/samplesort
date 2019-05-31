@@ -1,5 +1,6 @@
 lib = $(wildcard *.go) \
 	  $(wildcard analyze/*.go) \
+	  $(wildcard cache/*.go) \
 	  $(wildcard collection/*.go) \
 	  $(wildcard crypto/*.go) \
 	  $(wildcard engine/*.go) \
@@ -12,4 +13,4 @@ bin/samplesort: test cmd/samplesort/main.go $(lib)
 
 .PHONY: test
 test:
-	go test -race ./...
+	o test -race ./...
