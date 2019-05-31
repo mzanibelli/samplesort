@@ -1,5 +1,7 @@
 package extractor
 
+import "fmt"
+
 type storage interface {
 	ReadAll(name string) ([]byte, error)
 	Exists(name string) bool
@@ -33,13 +35,13 @@ func (e *Extractor) Extract(src string) {
 		err = e.exec(src, dst)
 	}
 	if err != nil {
-		e.stderr <- err
+		e.stderr <- fmt.Errorf("%s: %v", src, err)
 		return
 	}
 
 	err = e.load(p, dst)
 	if err != nil {
-		e.stderr <- err
+		e.stderr <- fmt.Errorf("%s: %v", dst, err)
 		return
 	}
 
