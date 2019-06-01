@@ -19,7 +19,7 @@ const (
 func main() {
 	logger := log.New(os.Stderr, "", log.LstdFlags)
 
-	col, err := samplesort.SampleSort(
+	feats, err := samplesort.SampleSort(
 		os.Args[1],
 		os.Getenv(env),
 		logger,
@@ -36,11 +36,7 @@ func main() {
 	p.X.Label.Text = "Features"
 	p.Y.Label.Text = "Value"
 
-	feats := col.Features()
-
-	fmt.Println(col)
-
-	var items int = 2
+	var items int = 20
 
 	logger.Println("start plotting...")
 	lines := make([]interface{}, items)

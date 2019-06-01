@@ -12,7 +12,7 @@ func TestAnalyze(t *testing.T) {
 			eng := new(mockEngine)
 			cac := new(mockCache)
 			SUT := analyze.New(col, eng, cac, 2, 0)
-			if err := SUT.Analyze(); err != nil {
+			if _, err := SUT.Analyze(); err != nil {
 				t.Error("should not fail")
 			}
 			expected := 3

@@ -47,7 +47,7 @@ func New(
 	return a
 }
 
-func (a *Analyze) Analyze() error {
+func (a *Analyze) Analyze() ([][]float64, error) {
 	var rawFeatures [][]float64
 	var normalizedFeatures [][]float64
 	var result []int
@@ -60,7 +60,7 @@ func (a *Analyze) Analyze() error {
 			return a.cache.Serialize(rawFeatures)
 		})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	a.log("normalizing features...")
@@ -77,13 +77,13 @@ func (a *Analyze) Analyze() error {
 			return a.cache.Serialize(result)
 		})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	a.log("sorting dataset...")
 	a.data.Sort(result)
 
-	return nil
+	return normalizedFeatures, nil
 }
 
 func (a *Analyze) log(vs ...interface{}) {

@@ -33,7 +33,13 @@ type result interface {
 	Features() [][]float64
 }
 
-func SampleSort(root, executable string, loggers ...*log.Logger) (result, error) {
+type matrix [][]float64
+
+func (m matrix) String() string        { return "" }
+func (m matrix) Size() int             { return len(m) }
+func (m matrix) Features() [][]float64 { return m }
+
+func SampleSort(root, executable string, loggers ...*log.Logger) ([][]float64, error) {
 	bin, err := which(executable)
 	if err != nil {
 		return nil, err
@@ -70,12 +76,12 @@ func SampleSort(root, executable string, loggers ...*log.Logger) (result, error)
 	}
 	wg.Wait()
 
-	err = ana.Analyze()
+	normalizedFeatures, err := ana.Analyze()
 	if err != nil {
 		return nil, err
 	}
 
-	return col, nil
+	return normalizedFeatures, nil
 }
 
 func which(path string) (func(src string) ([]byte, error), error) {
