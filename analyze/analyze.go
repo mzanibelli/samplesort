@@ -1,17 +1,11 @@
 package analyze
 
 import (
+	"encoding/json"
 	"math"
 
 	"github.com/bugra/kmeans"
 )
-
-type Analyze struct {
-	data      dataset
-	stats     engine
-	size      int
-	threshold int
-}
 
 type dataset interface {
 	Features() [][]float64
@@ -23,24 +17,54 @@ type engine interface {
 	SDs() []float64
 }
 
-func New(data dataset, stats engine, size, threshold int) *Analyze {
+type cache interface {
+	Fetch(key string, target interface{}, build func() ([]byte, error)) error
+}
+type Analyze struct {
+	data      dataset
+	stats     engine
+	cache     cache
+	size      int
+	threshold int
+}
+
+func New(data dataset, stats engine, cache cache, size, threshold int) *Analyze {
 	return &Analyze{
 		data,
 		stats,
+		cache,
 		size,
 		threshold,
 	}
 }
 
-func (a *Analyze) Analyze() {
-	feats := a.data.Features()
-	a.stats.Compute(feats)
-	dist := a.Distance(a.stats.SDs())
-	res, err := kmeans.Kmeans(feats, a.size, dist, a.threshold)
+func (a *Analyze) Analyze() error {
+	var feats [][]float64
+	var result []int
+	var err error
+	err = a.cache.Fetch("features", &feats,
+		func() ([]byte, error) {
+			feats = a.data.Features()
+			return json.Marshal(feats)
+		})
 	if err != nil {
-		panic(err)
+		return err
 	}
-	a.data.Sort(res)
+	err = a.cache.Fetch("kmeans", &result,
+		func() ([]byte, error) {
+			a.stats.Compute(feats)
+			dist := a.Distance(a.stats.SDs())
+			result, err = kmeans.Kmeans(feats, a.size, dist, a.threshold)
+			if err != nil {
+				return nil, err
+			}
+			return json.Marshal(result)
+		})
+	if err != nil {
+		return err
+	}
+	a.data.Sort(result)
+	return nil
 }
 
 // Distance is an Hamming distance that tolerates an error margin

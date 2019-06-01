@@ -44,7 +44,7 @@ func SampleSort(root, executable string, loggers ...*log.Logger) (result, error)
 	par := parser.New(fs, ext, input)
 	col := collection.New()
 	eng := engine.New()
-	ana := analyze.New(col, eng, size, threshold)
+	ana := analyze.New(col, eng, cac, size, threshold)
 
 	go par.Parse(root)
 
@@ -69,7 +69,10 @@ func SampleSort(root, executable string, loggers ...*log.Logger) (result, error)
 	}
 	wg.Wait()
 
-	ana.Analyze()
+	err = ana.Analyze()
+	if err != nil {
+		return nil, err
+	}
 
 	return col, nil
 }

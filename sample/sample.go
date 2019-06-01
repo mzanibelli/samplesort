@@ -1,7 +1,6 @@
 package sample
 
 import (
-	"fmt"
 	"sort"
 
 	"github.com/jeremywohl/flatten"
@@ -67,8 +66,3 @@ type feature struct {
 
 func (f feature) Key() string    { return f.key }
 func (f feature) Value() float64 { return f.value }
-
-type errNotFound struct{ key string }
-
-func (e errNotFound) String() string { return fmt.Sprintf("feature not found: %s", e.key) }
-func (e errNotFound) Error() string  { return e.String() }

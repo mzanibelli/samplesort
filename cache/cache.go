@@ -43,7 +43,7 @@ func (c *Cache) Fetch(
 		return err
 	}
 	if !warm {
-		err = c.fs.WriteAll(path, b.Bytes())
+		err = c.fs.WriteAll(path, content)
 	}
 	if err != nil {
 		return err

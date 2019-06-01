@@ -9,7 +9,7 @@ import (
 func TestCache(t *testing.T) {
 	t.Run("it should return cached data if found",
 		func(t *testing.T) {
-			fs := &mockFS{[]byte(`{"data":{"foo":"bar"}}`), nil, true, false}
+			fs := &mockFS{[]byte(`{"data":{"foo":"bar"}}`), nil, true, 0}
 			target := &mockData{map[string]string{}}
 			build := func() ([]byte, error) {
 				return []byte{}, nil
@@ -24,7 +24,7 @@ func TestCache(t *testing.T) {
 		})
 	t.Run("it should build data if not found",
 		func(t *testing.T) {
-			fs := &mockFS{[]byte(``), nil, false, false}
+			fs := &mockFS{[]byte(``), nil, false, 0}
 			target := &mockData{map[string]string{}}
 			build := func() ([]byte, error) {
 				return []byte(`{"data":{"foo":"bar"}}`), nil
@@ -39,14 +39,15 @@ func TestCache(t *testing.T) {
 		})
 	t.Run("it should write data if not found",
 		func(t *testing.T) {
-			fs := &mockFS{[]byte(``), nil, false, false}
+			fs := &mockFS{[]byte(``), nil, false, 0}
 			target := &mockData{map[string]string{}}
+			foo := []byte(`{"data":{"foo":"bar"}}`)
 			build := func() ([]byte, error) {
-				return []byte(`{"data":{"foo":"bar"}}`), nil
+				return foo, nil
 			}
 			SUT := cache.New(fs, ".json")
 			SUT.Fetch("foo", target, build)
-			expected := true
+			expected := len(foo)
 			actual := fs.written
 			if expected != actual {
 				t.Errorf("expected: %v, actual: %v", expected, actual)
@@ -54,14 +55,14 @@ func TestCache(t *testing.T) {
 		})
 	t.Run("it should not (over)write data if cached data is found",
 		func(t *testing.T) {
-			fs := &mockFS{[]byte(`{"data":{"foo":"bar"}}`), nil, true, false}
+			fs := &mockFS{[]byte(`{"data":{"foo":"bar"}}`), nil, true, 0}
 			target := &mockData{map[string]string{}}
 			build := func() ([]byte, error) {
 				return []byte{}, errors.New("foo")
 			}
 			SUT := cache.New(fs, ".json")
 			SUT.Fetch("foo", target, build)
-			expected := false
+			expected := 0
 			actual := fs.written
 			if expected != actual {
 				t.Errorf("expected: %v, actual: %v", expected, actual)
@@ -69,14 +70,14 @@ func TestCache(t *testing.T) {
 		})
 	t.Run("it should not write data if there was an error during build",
 		func(t *testing.T) {
-			fs := &mockFS{[]byte{}, nil, false, false}
+			fs := &mockFS{[]byte{}, nil, false, 0}
 			target := &mockData{map[string]string{}}
 			build := func() ([]byte, error) {
 				return []byte(`{"data":{"foo":"bar"}}`), errors.New("foo")
 			}
 			SUT := cache.New(fs, ".json")
 			SUT.Fetch("foo", target, build)
-			expected := false
+			expected := 0
 			actual := fs.written
 			if expected != actual {
 				t.Errorf("expected: %v, actual: %v", expected, actual)
@@ -84,14 +85,14 @@ func TestCache(t *testing.T) {
 		})
 	t.Run("it should not write data if there was an error during decoding",
 		func(t *testing.T) {
-			fs := &mockFS{[]byte{}, nil, false, false}
+			fs := &mockFS{[]byte{}, nil, false, 0}
 			target := &mockData{map[string]string{}}
 			build := func() ([]byte, error) {
 				return []byte{}, nil
 			}
 			SUT := cache.New(fs, ".json")
 			SUT.Fetch("foo", target, build)
-			expected := false
+			expected := 0
 			actual := fs.written
 			if expected != actual {
 				t.Errorf("expected: %v, actual: %v", expected, actual)
@@ -99,7 +100,7 @@ func TestCache(t *testing.T) {
 		})
 	t.Run("it should return an error if we couldn't read the cached data",
 		func(t *testing.T) {
-			fs := &mockFS{[]byte{}, errors.New("foo"), true, false}
+			fs := &mockFS{[]byte{}, errors.New("foo"), true, 0}
 			target := &mockData{map[string]string{}}
 			build := func() ([]byte, error) {
 				return []byte{}, nil
@@ -114,7 +115,7 @@ func TestCache(t *testing.T) {
 		})
 	t.Run("it should return an error if we couldn't build data",
 		func(t *testing.T) {
-			fs := &mockFS{[]byte{}, nil, false, false}
+			fs := &mockFS{[]byte{}, nil, false, 0}
 			target := &mockData{map[string]string{}}
 			build := func() ([]byte, error) {
 				return []byte{}, errors.New("foo")
@@ -129,7 +130,7 @@ func TestCache(t *testing.T) {
 		})
 	t.Run("it should return an error if decoding failed",
 		func(t *testing.T) {
-			fs := &mockFS{[]byte{}, nil, true, false}
+			fs := &mockFS{[]byte{}, nil, true, 0}
 			target := &mockData{map[string]string{}}
 			build := func() ([]byte, error) {
 				return []byte{}, nil
@@ -144,7 +145,7 @@ func TestCache(t *testing.T) {
 		})
 	t.Run("it should return an error if writing failed",
 		func(t *testing.T) {
-			fs := &mockFS{[]byte{}, errors.New("foo"), false, false}
+			fs := &mockFS{[]byte{}, errors.New("foo"), false, 0}
 			target := &mockData{map[string]string{}}
 			build := func() ([]byte, error) {
 				return []byte(`{"data":{"foo":"bar"}}`), nil
@@ -163,13 +164,13 @@ type mockFS struct {
 	content []byte
 	err     error
 	exists  bool
-	written bool
+	written int
 }
 
 func (m *mockFS) Exists(name string) bool             { return m.exists }
 func (m *mockFS) ReadAll(name string) ([]byte, error) { return m.content, m.err }
 func (m *mockFS) WriteAll(name string, data []byte) error {
-	m.written = true
+	m.written = len(data)
 	return m.err
 }
 

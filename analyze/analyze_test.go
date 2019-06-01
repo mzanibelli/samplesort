@@ -10,8 +10,11 @@ func TestAnalyze(t *testing.T) {
 		func(t *testing.T) {
 			col := new(mockDataset)
 			eng := new(mockEngine)
-			SUT := analyze.New(col, eng, 2, 0)
-			SUT.Analyze()
+			cac := new(mockCache)
+			SUT := analyze.New(col, eng, cac, 2, 0)
+			if err := SUT.Analyze(); err != nil {
+				t.Error("should not fail")
+			}
 			expected := 2
 			actual := col.flag
 			if expected != actual {
@@ -56,7 +59,8 @@ func TestDistance(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			col := new(mockDataset)
 			eng := new(mockEngine)
-			SUT := analyze.New(col, eng, 2, 0)
+			cac := new(mockCache)
+			SUT := analyze.New(col, eng, cac, 2, 0)
 			res, err := SUT.Distance(c.error)(c.input.i, c.input.j)
 			if c.output.res != res {
 				t.Errorf("distance mismatch: expected: %v, actual: %v", c.output.res, res)
@@ -86,3 +90,16 @@ type mockEngine struct{}
 
 func (mockEngine) Compute([][]float64) {}
 func (mockEngine) SDs() []float64      { return []float64{} }
+
+type mockCache struct{ err error }
+
+func (m *mockCache) Fetch(
+	key string,
+	target interface{},
+	build func() ([]byte, error),
+) error {
+	if m.err == nil {
+		build()
+	}
+	return m.err
+}

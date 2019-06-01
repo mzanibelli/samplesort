@@ -37,7 +37,7 @@ func TestCollection(t *testing.T) {
 				t.Errorf("expected: %v, actual: %v", expected, actual)
 			}
 		})
-	t.Run("it should an empty matrix if no common keys are found",
+	t.Run("it should return an empty matrix if no common keys are found",
 		func(t *testing.T) {
 			SUT := makeSUT()
 			SUT.Append(testEntity{"alice", []string{"foo", "baz"}, []float64{3.0, 12.65}})

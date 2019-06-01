@@ -48,5 +48,9 @@ func (osFS) ReadAll(name string) ([]byte, error) {
 }
 
 func (osFS) WriteAll(name string, content []byte) error {
-	return ioutil.WriteFile(name, content, 0644)
+	err := ioutil.WriteFile(name, content, 0644)
+	if err != io.EOF {
+		return err
+	}
+	return nil
 }
