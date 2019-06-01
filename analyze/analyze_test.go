@@ -39,7 +39,6 @@ func (d *mockDataset) Sort(centers []int) { d.flag += len(centers) }
 
 type mockEngine struct{}
 
-func (mockEngine) Compute([][]float64)                        {}
 func (mockEngine) Normalize(data [][]float64) [][]float64     { return data }
 func (mockEngine) Distance(s1, s2 []float64) (float64, error) { return 0, nil }
 

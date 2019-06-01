@@ -13,7 +13,6 @@ type dataset interface {
 }
 
 type engine interface {
-	Compute([][]float64)
 	Normalize([][]float64) [][]float64
 	Distance(s1, s2 []float64) (float64, error)
 }
@@ -46,9 +45,9 @@ func (a *Analyze) Analyze() error {
 	var result []int
 	var err error
 
+	log.Println("gathering features...")
 	err = a.cache.Fetch("features", &rawFeatures,
 		func() ([]byte, error) {
-			log.Println("gathering features...")
 			rawFeatures = a.data.Features()
 			return json.Marshal(rawFeatures)
 		})
@@ -56,23 +55,12 @@ func (a *Analyze) Analyze() error {
 		return err
 	}
 
-	err = a.cache.Fetch("normalized", &normalizedFeatures,
-		func() ([]byte, error) {
-			log.Println("computing features...")
-			a.stats.Compute(rawFeatures)
-			log.Println("normalizing features...")
-			normalizedFeatures = a.stats.Normalize(rawFeatures)
-			return json.Marshal(normalizedFeatures)
-		})
-	if err != nil {
-		return err
-	}
+	log.Println("normalizing features...")
+	normalizedFeatures = a.stats.Normalize(rawFeatures)
 
+	log.Println("computing kmeans...")
 	err = a.cache.Fetch("kmeans", &result,
 		func() ([]byte, error) {
-			log.Println("computing features...")
-			a.stats.Compute(rawFeatures)
-			log.Println("computing kmeans...")
 			result, err = kmeans.Kmeans(normalizedFeatures, a.size,
 				a.stats.Distance, a.threshold)
 			if err != nil {
@@ -84,6 +72,7 @@ func (a *Analyze) Analyze() error {
 		return err
 	}
 
+	log.Println("sorting dataset...")
 	a.data.Sort(result)
 
 	return nil

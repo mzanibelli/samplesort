@@ -8,8 +8,7 @@ import (
 )
 
 const (
-	ZSCORE_MIN float64 = -2.0
-	ZSCORE_MAX float64 = 2.0
+	ZSCORE_MAX float64 = 0.4
 )
 
 type Engine struct {
@@ -20,26 +19,8 @@ func New() *Engine {
 	return new(Engine)
 }
 
-func (e *Engine) Compute(data [][]float64) {
-	if len(e.stats) > 0 {
-		return
-	}
-	for i, features := range data {
-		if i == 0 {
-			e.stats = make(map[int]*featStat, len(features))
-		}
-		for j, feat := range features {
-			if _, ok := e.stats[j]; !ok {
-				e.stats[j] = &featStat{
-					values: make([]float64, len(data), len(data)),
-				}
-			}
-			e.stats[j].update(i, feat)
-		}
-	}
-}
-
 func (e *Engine) Normalize(data [][]float64) [][]float64 {
+	e.feed(data)
 	res := make([][]float64, len(data), len(data))
 	for i := range res {
 		row := make([]float64, len(e.stats), len(e.stats))
@@ -54,8 +35,7 @@ func (e *Engine) Normalize(data [][]float64) [][]float64 {
 func (e *Engine) Distance(s1, s2 []float64) (float64, error) {
 	var res float64 = 0
 	for i := range e.stats {
-		_, std := e.stats[i].meanStdDev()
-		if math.Abs(s1[i]-s2[i]) > std/2 {
+		if math.Abs(s1[i]-s2[i]) > e.stats[i].std/2 {
 			res++
 		}
 	}
@@ -67,43 +47,48 @@ func (e *Engine) String() string {
 	return string(json)
 }
 
+func (e *Engine) feed(data [][]float64) {
+	for i, features := range data {
+		if i == 0 {
+			e.stats = make(map[int]*featStat, len(features))
+		}
+		for j, feat := range features {
+			e.update(i, j, len(data), feat)
+		}
+	}
+}
+
+func (e *Engine) update(i, j, size int, feat float64) {
+	if _, ok := e.stats[j]; !ok {
+		e.stats[j] = new(featStat)
+		e.stats[j].values = make([]float64, size, size)
+	}
+	e.stats[j].values[i] = feat
+	e.stats[j].mean, e.stats[j].std = stat.MeanStdDev(
+		e.stats[j].values,
+		e.stats[j].weights(),
+	)
+}
+
 type featStat struct {
 	values []float64
 	mean   float64
 	std    float64
 }
 
-func (s *featStat) meanStdDev() (mean, std float64) {
-	if s.mean == 0 && s.std == 0 {
-		s.mean, s.std = stat.MeanStdDev(s.values, s.weights())
-	}
-	return s.mean, s.std
-}
-
-func (s *featStat) stdScore(x float64) float64 {
-	mean, std := s.meanStdDev()
-	return stat.StdScore(x, mean, std)
-}
-
-func (f *featStat) normalize(n float64) float64 {
-	score := f.stdScore(n)
-	switch {
-	case ZSCORE_MIN > score:
-		n = ZSCORE_MIN * n / score
-		break
-	case score > ZSCORE_MAX:
+func (s *featStat) normalize(n float64) float64 {
+	score := math.Abs(stat.StdScore(n, s.mean, s.std))
+	if score > ZSCORE_MAX {
 		n = ZSCORE_MAX * n / score
-		break
 	}
 	return n
 }
 
-func (s *featStat) update(i int, n float64) { s.values[i] = n }
-
+// so far, we cannot weight features
 func (s *featStat) weights() []float64 {
 	weigths := make([]float64, len(s.values))
 	for i := range weigths {
-		weigths[i] = 1 // so far, we cannot weight features
+		weigths[i] = 1
 	}
 	return weigths
 }
