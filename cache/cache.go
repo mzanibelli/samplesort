@@ -51,6 +51,10 @@ func (c *Cache) Fetch(
 	return nil
 }
 
+func (Cache) Serialize(v interface{}) ([]byte, error) {
+	return json.Marshal(v)
+}
+
 func (c *Cache) path(key string) string {
 	return key + c.format
 }

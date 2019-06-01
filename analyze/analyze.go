@@ -1,7 +1,6 @@
 package analyze
 
 import (
-	"encoding/json"
 	"log"
 
 	"github.com/bugra/kmeans"
@@ -19,6 +18,7 @@ type engine interface {
 
 type cache interface {
 	Fetch(key string, target interface{}, build func() ([]byte, error)) error
+	Serialize(v interface{}) ([]byte, error)
 }
 
 type Analyze struct {
@@ -27,16 +27,24 @@ type Analyze struct {
 	cache     cache
 	size      int
 	threshold int
+	loggers   []*log.Logger
 }
 
-func New(data dataset, stats engine, cache cache, size, threshold int) *Analyze {
-	return &Analyze{
-		data,
-		stats,
-		cache,
-		size,
-		threshold,
-	}
+func New(
+	data dataset,
+	stats engine,
+	cache cache,
+	size, threshold int,
+	loggers ...*log.Logger,
+) *Analyze {
+	a := new(Analyze)
+	a.data = data
+	a.stats = stats
+	a.cache = cache
+	a.size = size
+	a.threshold = threshold
+	a.loggers = loggers
+	return a
 }
 
 func (a *Analyze) Analyze() error {
@@ -45,20 +53,20 @@ func (a *Analyze) Analyze() error {
 	var result []int
 	var err error
 
-	log.Println("gathering features...")
+	a.log("gathering features...")
 	err = a.cache.Fetch("features", &rawFeatures,
 		func() ([]byte, error) {
 			rawFeatures = a.data.Features()
-			return json.Marshal(rawFeatures)
+			return a.cache.Serialize(rawFeatures)
 		})
 	if err != nil {
 		return err
 	}
 
-	log.Println("normalizing features...")
+	a.log("normalizing features...")
 	normalizedFeatures = a.stats.Normalize(rawFeatures)
 
-	log.Println("computing kmeans...")
+	a.log("computing kmeans...")
 	err = a.cache.Fetch("kmeans", &result,
 		func() ([]byte, error) {
 			result, err = kmeans.Kmeans(normalizedFeatures, a.size,
@@ -66,14 +74,20 @@ func (a *Analyze) Analyze() error {
 			if err != nil {
 				return nil, err
 			}
-			return json.Marshal(result)
+			return a.cache.Serialize(result)
 		})
 	if err != nil {
 		return err
 	}
 
-	log.Println("sorting dataset...")
+	a.log("sorting dataset...")
 	a.data.Sort(result)
 
 	return nil
+}
+
+func (a *Analyze) log(vs ...interface{}) {
+	for _, l := range a.loggers {
+		l.Println(vs...)
+	}
 }

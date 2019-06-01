@@ -44,6 +44,10 @@ func (mockEngine) Distance(s1, s2 []float64) (float64, error) { return 0, nil }
 
 type mockCache struct{ err error }
 
+func (mockCache) Serialize(v interface{}) ([]byte, error) {
+	return nil, nil
+}
+
 func (m *mockCache) Fetch(
 	key string,
 	target interface{},
