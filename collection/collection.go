@@ -64,7 +64,8 @@ func (c *Collection) Sort(centers []int) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if len(c.entities) != len(centers) {
-		panic("dataset and analysis size mismatch")
+		panic(fmt.Sprintf("dataset and analysis size mismatch: %d / %d",
+			len(c.entities), len(centers)))
 	}
 	sort.Slice(c.entities, func(i, j int) bool {
 		return centers[i] < centers[j]

@@ -15,7 +15,7 @@ func TestAnalyze(t *testing.T) {
 			if err := SUT.Analyze(); err != nil {
 				t.Error("should not fail")
 			}
-			expected := 2
+			expected := 3
 			actual := col.flag
 			if expected != actual {
 				t.Errorf("expected: %v, actual: %v", expected, actual)
@@ -84,7 +84,7 @@ func (d *mockDataset) Features() [][]float64 {
 	}
 }
 
-func (d *mockDataset) Sort([]int) { d.flag++ }
+func (d *mockDataset) Sort(centers []int) { d.flag += len(centers) }
 
 type mockEngine struct{}
 

@@ -43,7 +43,6 @@ func (a *Analyze) Analyze() error {
 	var sds []float64
 	var result []int
 	var err error
-	defer a.data.Sort(result)
 	err = a.cache.Fetch("features", &feats,
 		func() ([]byte, error) {
 			feats = a.data.Features()
@@ -63,8 +62,8 @@ func (a *Analyze) Analyze() error {
 	}
 	err = a.cache.Fetch("kmeans", &result,
 		func() ([]byte, error) {
-			dist := a.Distance(sds)
-			result, err = kmeans.Kmeans(feats, a.size, dist, a.threshold)
+			result, err = kmeans.Kmeans(feats, a.size,
+				a.Distance(sds), a.threshold)
 			if err != nil {
 				return nil, err
 			}
@@ -73,6 +72,7 @@ func (a *Analyze) Analyze() error {
 	if err != nil {
 		return err
 	}
+	a.data.Sort(result)
 	return nil
 }
 
