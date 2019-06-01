@@ -1,74 +1,55 @@
 package engine_test
 
 import (
-	"math"
-	"reflect"
 	"samplesort/engine"
 	"testing"
 )
 
-func TestSDs(t *testing.T) {
+func TestDistance(t *testing.T) {
 	cases := []struct {
-		name   string
-		input  [][]float64
-		output []float64
+		name  string
+		input struct {
+			i []float64
+			j []float64
+		}
+		output struct {
+			res float64
+			err error
+		}
 	}{
 		{
-			name: "foo",
-			input: [][]float64{
-				{10, 1},
-				{20, 2},
-				{30, 3},
-				{40, 4},
-				{50, 5},
+			name: "obvious",
+			input: struct {
+				i []float64
+				j []float64
+			}{
+				[]float64{5, 19.658, 42.356, -1256},
+				[]float64{3, 12.0, 38.85, -1.7},
 			},
-			output: []float64{math.Sqrt(200), math.Sqrt(2)},
+			output: struct {
+				res float64
+				err error
+			}{
+				2,
+				nil,
+			},
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			SUT := makeSUT(c.input)
-			expected := c.output
-			actual := SUT.SDs()
-			if !reflect.DeepEqual(expected, actual) {
-				t.Errorf("expected: %v, actual: %v", expected, actual)
+			SUT := engine.New()
+			SUT.Compute([][]float64{
+				{10, 20, 30, 40},
+				{1, 2, 3, 4},
+				// stds { 6.36, 12.72, 19.09, 25.45 }
+			})
+			res, err := SUT.Distance(c.input.i, c.input.j)
+			if c.output.res != res {
+				t.Errorf("distance mismatch: expected: %v, actual: %v", c.output.res, res)
+			}
+			if c.output.err != err {
+				t.Errorf("error mismatch: expected: %v, actual: %v", c.output.err, err)
 			}
 		})
 	}
-}
-
-func TestMeans(t *testing.T) {
-	cases := []struct {
-		name   string
-		input  [][]float64
-		output []float64
-	}{
-		{
-			name: "foo",
-			input: [][]float64{
-				{10, 1},
-				{20, 2},
-				{30, 3},
-				{40, 4},
-				{50, 5},
-			},
-			output: []float64{30, 3},
-		},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			SUT := makeSUT(c.input)
-			expected := c.output
-			actual := SUT.Means()
-			if !reflect.DeepEqual(expected, actual) {
-				t.Errorf("expected: %v, actual: %v", expected, actual)
-			}
-		})
-	}
-}
-
-func makeSUT(data [][]float64) *engine.Engine {
-	SUT := engine.New()
-	SUT.Compute(data)
-	return SUT
 }

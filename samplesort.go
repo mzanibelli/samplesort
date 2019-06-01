@@ -23,8 +23,8 @@ const (
 
 	input     string = ".wav"
 	output    string = ".json"
-	size      int    = 100
-	threshold int    = 0
+	size      int    = 10
+	threshold int    = 10
 )
 
 type result interface {

@@ -2,7 +2,7 @@ package analyze
 
 import (
 	"encoding/json"
-	"math"
+	"log"
 
 	"github.com/bugra/kmeans"
 )
@@ -14,12 +14,14 @@ type dataset interface {
 
 type engine interface {
 	Compute([][]float64)
-	SDs() []float64
+	Normalize([][]float64) [][]float64
+	Distance(s1, s2 []float64) (float64, error)
 }
 
 type cache interface {
 	Fetch(key string, target interface{}, build func() ([]byte, error)) error
 }
+
 type Analyze struct {
 	data      dataset
 	stats     engine
@@ -39,31 +41,40 @@ func New(data dataset, stats engine, cache cache, size, threshold int) *Analyze 
 }
 
 func (a *Analyze) Analyze() error {
-	var feats [][]float64
-	var sds []float64
+	var rawFeatures [][]float64
+	var normalizedFeatures [][]float64
 	var result []int
 	var err error
-	err = a.cache.Fetch("features", &feats,
+
+	err = a.cache.Fetch("features", &rawFeatures,
 		func() ([]byte, error) {
-			feats = a.data.Features()
-			return json.Marshal(feats)
+			log.Println("gathering features...")
+			rawFeatures = a.data.Features()
+			return json.Marshal(rawFeatures)
 		})
 	if err != nil {
 		return err
 	}
-	err = a.cache.Fetch("sds", &sds,
+
+	err = a.cache.Fetch("normalized", &normalizedFeatures,
 		func() ([]byte, error) {
-			a.stats.Compute(feats)
-			sds = a.stats.SDs()
-			return json.Marshal(sds)
+			log.Println("computing features...")
+			a.stats.Compute(rawFeatures)
+			log.Println("normalizing features...")
+			normalizedFeatures = a.stats.Normalize(rawFeatures)
+			return json.Marshal(normalizedFeatures)
 		})
 	if err != nil {
 		return err
 	}
+
 	err = a.cache.Fetch("kmeans", &result,
 		func() ([]byte, error) {
-			result, err = kmeans.Kmeans(feats, a.size,
-				a.Distance(sds), a.threshold)
+			log.Println("computing features...")
+			a.stats.Compute(rawFeatures)
+			log.Println("computing kmeans...")
+			result, err = kmeans.Kmeans(normalizedFeatures, a.size,
+				a.stats.Distance, a.threshold)
 			if err != nil {
 				return nil, err
 			}
@@ -72,20 +83,8 @@ func (a *Analyze) Analyze() error {
 	if err != nil {
 		return err
 	}
-	a.data.Sort(result)
-	return nil
-}
 
-// Distance is an Hamming distance that tolerates an error margin
-// testing float values for equality.
-func (a *Analyze) Distance(margins []float64) kmeans.DistanceFunction {
-	return func(s1, s2 []float64) (float64, error) {
-		var res float64 = 0
-		for i, margin := range margins {
-			if math.Abs(s1[i]-s2[i]) > margin/2 {
-				res++
-			}
-		}
-		return res, nil
-	}
+	a.data.Sort(result)
+
+	return nil
 }

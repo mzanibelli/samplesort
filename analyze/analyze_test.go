@@ -23,55 +23,6 @@ func TestAnalyze(t *testing.T) {
 		})
 }
 
-func TestDistance(t *testing.T) {
-	cases := []struct {
-		name  string
-		error []float64
-		input struct {
-			i []float64
-			j []float64
-		}
-		output struct {
-			res float64
-			err error
-		}
-	}{
-		{
-			name:  "obvious",
-			error: []float64{1, 1, 10, 1},
-			input: struct {
-				i []float64
-				j []float64
-			}{
-				[]float64{27, 12.3, 42.356, -2},
-				[]float64{3, 12.0, 38.85, -1.7},
-			},
-			output: struct {
-				res float64
-				err error
-			}{
-				1,
-				nil,
-			},
-		},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			col := new(mockDataset)
-			eng := new(mockEngine)
-			cac := new(mockCache)
-			SUT := analyze.New(col, eng, cac, 2, 0)
-			res, err := SUT.Distance(c.error)(c.input.i, c.input.j)
-			if c.output.res != res {
-				t.Errorf("distance mismatch: expected: %v, actual: %v", c.output.res, res)
-			}
-			if c.output.err != err {
-				t.Errorf("error mismatch: expected: %v, actual: %v", c.output.err, err)
-			}
-		})
-	}
-}
-
 type mockDataset struct {
 	flag int
 }
@@ -88,8 +39,9 @@ func (d *mockDataset) Sort(centers []int) { d.flag += len(centers) }
 
 type mockEngine struct{}
 
-func (mockEngine) Compute([][]float64) {}
-func (mockEngine) SDs() []float64      { return []float64{} }
+func (mockEngine) Compute([][]float64)                        {}
+func (mockEngine) Normalize(data [][]float64) [][]float64     { return data }
+func (mockEngine) Distance(s1, s2 []float64) (float64, error) { return 0, nil }
 
 type mockCache struct{ err error }
 
