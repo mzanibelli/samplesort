@@ -39,6 +39,14 @@ func (e *Engine) SDs() []float64 {
 	return res
 }
 
+func (e *Engine) Means() []float64 {
+	res := make([]float64, len(e.stats))
+	for i := range res {
+		res[i] = e.stats[i].mean()
+	}
+	return res
+}
+
 func (e *Engine) String() string {
 	json, _ := json.MarshalIndent(e.stats, "", " ")
 	return string(json)
@@ -58,4 +66,8 @@ func (s *stat) update(i int, n float64) {
 
 func (s *stat) sd() float64 {
 	return math.Sqrt(variance(s.values))
+}
+
+func (s *stat) mean() float64 {
+	return mean(s.values)
 }

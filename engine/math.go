@@ -4,7 +4,7 @@ import "math"
 
 func round(n, precision float64) float64 {
 	if precision == 0 {
-		precision = math.SmallestNonzeroFloat64
+		panic("round: division by zero")
 	}
 	return math.Round(n/precision) * precision
 }
@@ -15,6 +15,13 @@ func sum(data []float64) float64 {
 		result += value
 	}
 	return result
+}
+
+func mean(data []float64) float64 {
+	if len(data) == 0 {
+		panic("mean: division by zero")
+	}
+	return sum(data) / float64(len(data))
 }
 
 func variance(data []float64) float64 {

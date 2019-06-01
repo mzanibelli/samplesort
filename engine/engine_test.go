@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestEngine(t *testing.T) {
+func TestSDs(t *testing.T) {
 	cases := []struct {
 		name   string
 		input  [][]float64
@@ -30,6 +30,36 @@ func TestEngine(t *testing.T) {
 			SUT := makeSUT(c.input)
 			expected := c.output
 			actual := SUT.SDs()
+			if !reflect.DeepEqual(expected, actual) {
+				t.Errorf("expected: %v, actual: %v", expected, actual)
+			}
+		})
+	}
+}
+
+func TestMeans(t *testing.T) {
+	cases := []struct {
+		name   string
+		input  [][]float64
+		output []float64
+	}{
+		{
+			name: "foo",
+			input: [][]float64{
+				{10, 1},
+				{20, 2},
+				{30, 3},
+				{40, 4},
+				{50, 5},
+			},
+			output: []float64{30, 3},
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			SUT := makeSUT(c.input)
+			expected := c.output
+			actual := SUT.Means()
 			if !reflect.DeepEqual(expected, actual) {
 				t.Errorf("expected: %v, actual: %v", expected, actual)
 			}
