@@ -86,9 +86,5 @@ func (s *featStat) normalize(n float64) float64 {
 
 // so far, we cannot weight features
 func (s *featStat) weights() []float64 {
-	weigths := make([]float64, len(s.values))
-	for i := range weigths {
-		weigths[i] = 1
-	}
-	return weigths
+	return nil
 }
