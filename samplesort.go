@@ -22,7 +22,6 @@ const (
 )
 
 func SampleSort(executable string, configs ...config) ([][]float64, error) {
-
 	cfg := newConfig(configs...)
 
 	bin, err := which(executable, cfg.DataFormat())
@@ -30,6 +29,7 @@ func SampleSort(executable string, configs ...config) ([][]float64, error) {
 		return nil, err
 	}
 
+	// DI happens here.
 	cac := cache.New(fs, cfg)
 	ext := extractor.New(cac, bin)
 	par := parser.New(fs, ext, cfg)
