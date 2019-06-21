@@ -63,6 +63,3 @@ type feature struct {
 	key   string
 	value float64
 }
-
-func (f feature) Key() string    { return f.key }
-func (f feature) Value() float64 { return f.value }

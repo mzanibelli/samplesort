@@ -23,8 +23,8 @@ const (
 
 	input     string = ".wav"
 	output    string = ".json"
-	size      int    = 10
-	threshold int    = 10
+	size      int    = 5
+	threshold int    = 10000
 )
 
 type result interface {
@@ -80,6 +80,8 @@ func SampleSort(root, executable string, loggers ...*log.Logger) ([][]float64, e
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println(col)
 
 	return normalizedFeatures, nil
 }

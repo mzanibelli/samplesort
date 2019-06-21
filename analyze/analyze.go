@@ -70,7 +70,7 @@ func (a *Analyze) Analyze() ([][]float64, error) {
 	err = a.cache.Fetch("kmeans", &result,
 		func() ([]byte, error) {
 			result, err = kmeans.Kmeans(normalizedFeatures, a.size,
-				a.stats.Distance, a.threshold)
+				kmeans.SquaredEuclideanDistance, a.threshold)
 			if err != nil {
 				return nil, err
 			}

@@ -3,6 +3,7 @@ package engine
 import (
 	"encoding/json"
 	"math"
+	"sort"
 
 	"gonum.org/v1/gonum/stat"
 )
@@ -29,15 +30,14 @@ func (e *Engine) Normalize(data [][]float64) [][]float64 {
 		}
 		res[i] = row
 	}
+	e.feed(res)
 	return res
 }
 
-func (e *Engine) Distance(s1, s2 []float64) (float64, error) {
+func (e *Engine) Distance(sampleFeatures, meanOfCluster []float64) (float64, error) {
 	var res float64 = 0
-	for i := range e.stats {
-		if math.Abs(s1[i]-s2[i]) > e.stats[i].std/2 {
-			res++
-		}
+	for i := range sampleFeatures {
+		res += math.Abs(sampleFeatures[i] - meanOfCluster[i])
 	}
 	return res, nil
 }
@@ -60,8 +60,9 @@ func (e *Engine) feed(data [][]float64) {
 
 func (e *Engine) update(i, j, size int, feat float64) {
 	if _, ok := e.stats[j]; !ok {
-		e.stats[j] = new(featStat)
-		e.stats[j].values = make([]float64, size, size)
+		e.stats[j] = &featStat{
+			values: make([]float64, size, size),
+		}
 	}
 	e.stats[j].values[i] = feat
 	e.stats[j].mean, e.stats[j].std = stat.MeanStdDev(
@@ -77,14 +78,32 @@ type featStat struct {
 }
 
 func (s *featStat) normalize(n float64) float64 {
-	score := math.Abs(stat.StdScore(n, s.mean, s.std))
-	if score > ZSCORE_MAX {
-		n = ZSCORE_MAX * n / score
+	var min float64 = math.MaxFloat64
+	var max float64 = -math.MaxFloat64
+	for _, v := range s.values {
+		if math.Abs(stat.StdScore(v, s.mean, s.std)) > ZSCORE_MAX {
+			continue
+		}
+		min = math.Min(min, v)
+		max = math.Max(max, v)
 	}
-	return n
+	norm := (n - min) / (max - min)
+	switch {
+	case norm >= 1:
+		return 1
+	case norm <= 0:
+		return 0
+	default:
+		return norm
+	}
+}
+
+func (s *featStat) quantile(n float64) float64 {
+	tmp := make([]float64, len(s.values))
+	copy(tmp, s.values)
+	sort.Float64s(tmp)
+	return stat.Quantile(n, stat.Empirical, tmp, s.weights())
 }
 
 // so far, we cannot weight features
-func (s *featStat) weights() []float64 {
-	return nil
-}
+func (s *featStat) weights() []float64 { return nil }
