@@ -180,4 +180,5 @@ type mockData struct {
 
 type mockConfig struct{}
 
-func (mockConfig) DataFormat() string { return ".json" }
+func (mockConfig) FileSystemRoot() string { return "/" }
+func (mockConfig) DataFormat() string     { return ".json" }

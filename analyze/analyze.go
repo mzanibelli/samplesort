@@ -22,7 +22,7 @@ type cache interface {
 type config interface {
 	Size() int
 	MaxIterations() int
-	Log(vs ...interface{})
+	Err(vs ...interface{})
 }
 
 type Analyze struct {
@@ -41,26 +41,31 @@ func New(data dataset, stats engine, storage cache, cfg config) *Analyze {
 	}
 }
 
-func (a *Analyze) Analyze() ([][]float64, error) {
+// TODO: use the in-house distance function.
+func (a *Analyze) Analyze() error {
 	var rawFeatures [][]float64
 	var normalizedFeatures [][]float64
 	var result []int
 	var err error
 
-	a.cfg.Log("gathering features...")
+	a.cfg.Err("gathering features...")
 	err = a.cache.Fetch("features", &rawFeatures,
 		func() ([]byte, error) {
 			rawFeatures = a.data.Features()
 			return a.cache.Serialize(rawFeatures)
 		})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	a.cfg.Log("normalizing features...")
+	if len(rawFeatures) == 0 {
+		return nil
+	}
+
+	a.cfg.Err("normalizing features...")
 	normalizedFeatures = a.stats.Normalize(rawFeatures)
 
-	a.cfg.Log("computing kmeans...")
+	a.cfg.Err("computing kmeans...")
 	err = a.cache.Fetch("kmeans", &result,
 		func() ([]byte, error) {
 			result, err = kmeans.Kmeans(normalizedFeatures, a.cfg.Size(),
@@ -71,11 +76,11 @@ func (a *Analyze) Analyze() ([][]float64, error) {
 			return a.cache.Serialize(result)
 		})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	a.cfg.Log("sorting dataset...")
+	a.cfg.Err("sorting dataset...")
 	a.data.Sort(result)
 
-	return normalizedFeatures, nil
+	return nil
 }

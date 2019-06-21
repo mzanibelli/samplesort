@@ -21,12 +21,12 @@ const (
 	Version  string = "v2.1_beta2-linux-i686"
 )
 
-func SampleSort(executable string, configs ...config) ([][]float64, error) {
+func SampleSort(executable string, configs ...config) error {
 	cfg := newConfig(configs...)
 
 	bin, err := which(executable, cfg.DataFormat())
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// DI happens here.
@@ -41,7 +41,7 @@ func SampleSort(executable string, configs ...config) ([][]float64, error) {
 
 	go func() {
 		for err := range ext.Err() {
-			cfg.Log(err)
+			cfg.Err(err)
 		}
 	}()
 
@@ -58,14 +58,14 @@ func SampleSort(executable string, configs ...config) ([][]float64, error) {
 	}
 	wg.Wait()
 
-	normalizedFeatures, err := ana.Analyze()
+	err = ana.Analyze()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	fmt.Println(col)
 
-	return normalizedFeatures, nil
+	return nil
 }
 
 func which(path, output string) (func(src string) ([]byte, error), error) {

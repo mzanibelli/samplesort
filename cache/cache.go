@@ -3,6 +3,7 @@ package cache
 import (
 	"bytes"
 	"encoding/json"
+	"path/filepath"
 )
 
 type Cache struct {
@@ -17,6 +18,7 @@ type storage interface {
 }
 
 type config interface {
+	FileSystemRoot() string
 	DataFormat() string
 }
 
@@ -31,7 +33,7 @@ func (c *Cache) Fetch(
 ) error {
 	var content []byte
 	var err error
-	path := key + c.cfg.DataFormat()
+	path := c.path(key)
 	hit := c.fs.Exists(path)
 	if hit {
 		content, err = c.fs.ReadAll(path)
@@ -53,6 +55,20 @@ func (c *Cache) Fetch(
 		return err
 	}
 	return nil
+}
+
+// TODO: write tests for storage path.
+func (c *Cache) path(key string) string {
+	root := c.cfg.FileSystemRoot()
+	file := key + c.cfg.DataFormat()
+	if filepath.IsAbs(file) {
+		return file
+	}
+	rel, err := filepath.Rel(".", file)
+	if err != nil {
+		panic(err)
+	}
+	return filepath.Join(root, rel)
 }
 
 // TODO: improve the way we can enforce the storage format.

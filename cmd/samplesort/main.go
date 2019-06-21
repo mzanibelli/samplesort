@@ -13,7 +13,7 @@ const (
 
 func main() {
 	logger := log.New(os.Stderr, "", log.LstdFlags)
-	_, err := samplesort.SampleSort(
+	err := samplesort.SampleSort(
 		os.Getenv(env),
 		samplesort.WithFileSystemRoot(os.Args[1]),
 		samplesort.WithLoggers(logger),

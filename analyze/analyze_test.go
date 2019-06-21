@@ -13,7 +13,7 @@ func TestAnalyze(t *testing.T) {
 			cac := new(mockCache)
 			cfg := new(mockConfig)
 			SUT := analyze.New(col, eng, cac, cfg)
-			if _, err := SUT.Analyze(); err != nil {
+			if err := SUT.Analyze(); err != nil {
 				t.Error("should not fail")
 			}
 			expected := 3
@@ -22,13 +22,28 @@ func TestAnalyze(t *testing.T) {
 				t.Errorf("expected: %v, actual: %v", expected, actual)
 			}
 		})
+	t.Run("it should not fail if no data is found",
+		func(t *testing.T) {
+			col := &mockDataset{0, true}
+			eng := new(mockEngine)
+			cac := new(mockCache)
+			cfg := new(mockConfig)
+			SUT := analyze.New(col, eng, cac, cfg)
+			if err := SUT.Analyze(); err != nil {
+				t.Error("should not fail")
+			}
+		})
 }
 
 type mockDataset struct {
-	flag int
+	flag    int
+	nothing bool
 }
 
 func (d *mockDataset) Features() [][]float64 {
+	if d.nothing {
+		return [][]float64{}
+	}
 	d.flag++
 	return [][]float64{
 		{1, 2, 3},
@@ -64,4 +79,4 @@ type mockConfig struct{}
 
 func (mockConfig) Size() int             { return 5 }
 func (mockConfig) MaxIterations() int    { return 10 }
-func (mockConfig) Log(vs ...interface{}) {}
+func (mockConfig) Err(vs ...interface{}) {}
