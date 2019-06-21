@@ -11,7 +11,8 @@ func TestAnalyze(t *testing.T) {
 			col := new(mockDataset)
 			eng := new(mockEngine)
 			cac := new(mockCache)
-			SUT := analyze.New(col, eng, cac, 2, 0)
+			cfg := new(mockConfig)
+			SUT := analyze.New(col, eng, cac, cfg)
 			if _, err := SUT.Analyze(); err != nil {
 				t.Error("should not fail")
 			}
@@ -58,3 +59,9 @@ func (m *mockCache) Fetch(
 	}
 	return m.err
 }
+
+type mockConfig struct{}
+
+func (mockConfig) Size() int             { return 5 }
+func (mockConfig) MaxIterations() int    { return 10 }
+func (mockConfig) Log(vs ...interface{}) {}

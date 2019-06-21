@@ -6,8 +6,8 @@ import (
 )
 
 type Cache struct {
-	fs     storage
-	format string
+	fs  storage
+	cfg config
 }
 
 type storage interface {
@@ -16,8 +16,12 @@ type storage interface {
 	WriteAll(name string, data []byte) error
 }
 
-func New(fs storage, format string) *Cache {
-	return &Cache{fs, format}
+type config interface {
+	DataFormat() string
+}
+
+func New(fs storage, cfg config) *Cache {
+	return &Cache{fs, cfg}
 }
 
 func (c *Cache) Fetch(
@@ -27,9 +31,9 @@ func (c *Cache) Fetch(
 ) error {
 	var content []byte
 	var err error
-	path := c.path(key)
-	warm := c.fs.Exists(path)
-	if warm {
+	path := key + c.cfg.DataFormat()
+	hit := c.fs.Exists(path)
+	if hit {
 		content, err = c.fs.ReadAll(path)
 	} else {
 		content, err = build()
@@ -42,7 +46,7 @@ func (c *Cache) Fetch(
 	if err != nil {
 		return err
 	}
-	if !warm {
+	if !hit {
 		err = c.fs.WriteAll(path, content)
 	}
 	if err != nil {
@@ -51,10 +55,7 @@ func (c *Cache) Fetch(
 	return nil
 }
 
+// TODO: improve the way we can enforce the storage format.
 func (Cache) Serialize(v interface{}) ([]byte, error) {
 	return json.Marshal(v)
-}
-
-func (c *Cache) path(key string) string {
-	return key + c.format
 }

@@ -42,7 +42,7 @@ func TestNormalize(t *testing.T) {
 		func(t *testing.T) {
 			checkLength := func(g generator) bool {
 				data := getData(g, seed)
-				SUT := engine.New()
+				SUT := engine.New(mockConfig{})
 				actual := SUT.Normalize(data)
 				if len(data) != len(actual) {
 					t.Log("input:", len(data))
@@ -59,7 +59,7 @@ func TestNormalize(t *testing.T) {
 		func(t *testing.T) {
 			checkDecreasing := func(g generator) bool {
 				data := getData(g, seed)
-				SUT := engine.New()
+				SUT := engine.New(mockConfig{})
 				actual := SUT.Normalize(data)
 				for i, row := range data {
 					for j := range row {
@@ -96,7 +96,7 @@ func TestDistance(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			SUT := engine.New()
+			SUT := engine.New(mockConfig{})
 			SUT.Normalize([][]float64{
 				{10, 20, 30, 40},
 				{1, 2, 3, 4},
@@ -110,3 +110,7 @@ func TestDistance(t *testing.T) {
 		})
 	}
 }
+
+type mockConfig struct{}
+
+func (mockConfig) MaxZScore() float64 { return 0.5 }

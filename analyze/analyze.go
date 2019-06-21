@@ -1,8 +1,6 @@
 package analyze
 
 import (
-	"log"
-
 	"github.com/bugra/kmeans"
 )
 
@@ -21,30 +19,26 @@ type cache interface {
 	Serialize(v interface{}) ([]byte, error)
 }
 
-type Analyze struct {
-	data      dataset
-	stats     engine
-	cache     cache
-	size      int
-	threshold int
-	loggers   []*log.Logger
+type config interface {
+	Size() int
+	MaxIterations() int
+	Log(vs ...interface{})
 }
 
-func New(
-	data dataset,
-	stats engine,
-	cache cache,
-	size, threshold int,
-	loggers ...*log.Logger,
-) *Analyze {
-	a := new(Analyze)
-	a.data = data
-	a.stats = stats
-	a.cache = cache
-	a.size = size
-	a.threshold = threshold
-	a.loggers = loggers
-	return a
+type Analyze struct {
+	data  dataset
+	stats engine
+	cache cache
+	cfg   config
+}
+
+func New(data dataset, stats engine, storage cache, cfg config) *Analyze {
+	return &Analyze{
+		data:  data,
+		stats: stats,
+		cache: storage,
+		cfg:   cfg,
+	}
 }
 
 func (a *Analyze) Analyze() ([][]float64, error) {
@@ -53,7 +47,7 @@ func (a *Analyze) Analyze() ([][]float64, error) {
 	var result []int
 	var err error
 
-	a.log("gathering features...")
+	a.cfg.Log("gathering features...")
 	err = a.cache.Fetch("features", &rawFeatures,
 		func() ([]byte, error) {
 			rawFeatures = a.data.Features()
@@ -63,14 +57,14 @@ func (a *Analyze) Analyze() ([][]float64, error) {
 		return nil, err
 	}
 
-	a.log("normalizing features...")
+	a.cfg.Log("normalizing features...")
 	normalizedFeatures = a.stats.Normalize(rawFeatures)
 
-	a.log("computing kmeans...")
+	a.cfg.Log("computing kmeans...")
 	err = a.cache.Fetch("kmeans", &result,
 		func() ([]byte, error) {
-			result, err = kmeans.Kmeans(normalizedFeatures, a.size,
-				kmeans.SquaredEuclideanDistance, a.threshold)
+			result, err = kmeans.Kmeans(normalizedFeatures, a.cfg.Size(),
+				kmeans.SquaredEuclideanDistance, a.cfg.MaxIterations())
 			if err != nil {
 				return nil, err
 			}
@@ -80,14 +74,8 @@ func (a *Analyze) Analyze() ([][]float64, error) {
 		return nil, err
 	}
 
-	a.log("sorting dataset...")
+	a.cfg.Log("sorting dataset...")
 	a.data.Sort(result)
 
 	return normalizedFeatures, nil
-}
-
-func (a *Analyze) log(vs ...interface{}) {
-	for _, l := range a.loggers {
-		l.Println(vs...)
-	}
 }

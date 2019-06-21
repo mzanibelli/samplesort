@@ -2,7 +2,6 @@ package samplesort
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"sync"
@@ -20,46 +19,29 @@ import (
 const (
 	Checksum string = "9c91599c118ad0f2eef14e7bbcc050d8c802d3175b8e1766c820c7ab5ce685f5"
 	Version  string = "v2.1_beta2-linux-i686"
-
-	input     string = ".wav"
-	output    string = ".json"
-	size      int    = 5
-	threshold int    = 10000
 )
 
-type result interface {
-	fmt.Stringer
-	Size() int
-	Features() [][]float64
-}
+func SampleSort(executable string, configs ...config) ([][]float64, error) {
 
-type matrix [][]float64
+	cfg := newConfig(configs...)
 
-func (m matrix) String() string        { return "" }
-func (m matrix) Size() int             { return len(m) }
-func (m matrix) Features() [][]float64 { return m }
-
-func SampleSort(root, executable string, loggers ...*log.Logger) ([][]float64, error) {
-	bin, err := which(executable)
+	bin, err := which(executable, cfg.DataFormat())
 	if err != nil {
 		return nil, err
 	}
 
-	cac := cache.New(fs, output)
+	cac := cache.New(fs, cfg)
 	ext := extractor.New(cac, bin)
-	par := parser.New(fs, ext, input)
+	par := parser.New(fs, ext, cfg)
 	col := collection.New()
-	eng := engine.New()
-	ana := analyze.New(col, eng, cac,
-		size, threshold, loggers...)
+	eng := engine.New(cfg)
+	ana := analyze.New(col, eng, cac, cfg)
 
-	go par.Parse(root)
+	go par.Parse(cfg.FileSystemRoot())
 
 	go func() {
 		for err := range ext.Err() {
-			for _, l := range loggers {
-				l.Println(err)
-			}
+			cfg.Log(err)
 		}
 	}()
 
@@ -86,7 +68,7 @@ func SampleSort(root, executable string, loggers ...*log.Logger) ([][]float64, e
 	return normalizedFeatures, nil
 }
 
-func which(path string) (func(src string) ([]byte, error), error) {
+func which(path, output string) (func(src string) ([]byte, error), error) {
 	fd, err := fs.Open(path)
 	defer fd.Close()
 	switch {

@@ -15,9 +15,9 @@ func main() {
 	logger := log.New(os.Stderr, "", log.LstdFlags)
 
 	_, err := samplesort.SampleSort(
-		os.Args[1],
 		os.Getenv(env),
-		logger,
+		samplesort.WithFileSystemRoot(os.Args[1]),
+		samplesort.WithLoggers(logger),
 	)
 
 	usage(err)

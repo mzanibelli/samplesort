@@ -17,7 +17,7 @@ func TestParser(t *testing.T) {
 				{"bar", mkfile("bar"), nil},
 			}, 0}
 			ext := new(mockExtractor)
-			SUT := parser.New(fs, ext, ".wav")
+			SUT := parser.New(fs, ext, mockConfig{})
 			SUT.Parse("")
 			expected := 1
 			actual := fs.count
@@ -32,7 +32,7 @@ func TestParser(t *testing.T) {
 				{"bar", mkfile("bar"), nil},
 			}, 0}
 			ext := new(mockExtractor)
-			SUT := parser.New(fs, ext, ".wav")
+			SUT := parser.New(fs, ext, mockConfig{})
 			SUT.Parse("")
 			expected := 2
 			actual := fs.count
@@ -47,7 +47,7 @@ func TestParser(t *testing.T) {
 				{"bar.pdf", mkfile("bar.pdf"), nil},
 			}, 0}
 			ext := new(mockExtractor)
-			SUT := parser.New(fs, ext, ".wav")
+			SUT := parser.New(fs, ext, mockConfig{})
 			SUT.Parse("")
 			expected := 2
 			actual := fs.count
@@ -62,7 +62,7 @@ func TestParser(t *testing.T) {
 				{"bar.wav", mkfile("bar.wav"), nil},
 			}, 0}
 			ext := new(mockExtractor)
-			SUT := parser.New(fs, ext, ".wav")
+			SUT := parser.New(fs, ext, mockConfig{})
 			SUT.Parse("")
 			expected := 1
 			actual := ext.count
@@ -117,3 +117,7 @@ type mockExtractor struct {
 
 func (e *mockExtractor) Extract(path string) { e.count++ }
 func (e *mockExtractor) Close()              {}
+
+type mockConfig struct{}
+
+func (mockConfig) AudioFormat() string { return ".wav" }

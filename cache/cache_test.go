@@ -14,7 +14,7 @@ func TestCache(t *testing.T) {
 			build := func() ([]byte, error) {
 				return []byte{}, nil
 			}
-			SUT := cache.New(fs, ".json")
+			SUT := cache.New(fs, mockConfig{})
 			SUT.Fetch("foo", target, build)
 			expected := "bar"
 			actual := target.Data["foo"]
@@ -29,7 +29,7 @@ func TestCache(t *testing.T) {
 			build := func() ([]byte, error) {
 				return []byte(`{"data":{"foo":"bar"}}`), nil
 			}
-			SUT := cache.New(fs, ".json")
+			SUT := cache.New(fs, mockConfig{})
 			SUT.Fetch("foo", target, build)
 			expected := "bar"
 			actual := target.Data["foo"]
@@ -45,7 +45,7 @@ func TestCache(t *testing.T) {
 			build := func() ([]byte, error) {
 				return foo, nil
 			}
-			SUT := cache.New(fs, ".json")
+			SUT := cache.New(fs, mockConfig{})
 			SUT.Fetch("foo", target, build)
 			expected := len(foo)
 			actual := fs.written
@@ -60,7 +60,7 @@ func TestCache(t *testing.T) {
 			build := func() ([]byte, error) {
 				return []byte{}, errors.New("foo")
 			}
-			SUT := cache.New(fs, ".json")
+			SUT := cache.New(fs, mockConfig{})
 			SUT.Fetch("foo", target, build)
 			expected := 0
 			actual := fs.written
@@ -75,7 +75,7 @@ func TestCache(t *testing.T) {
 			build := func() ([]byte, error) {
 				return []byte(`{"data":{"foo":"bar"}}`), errors.New("foo")
 			}
-			SUT := cache.New(fs, ".json")
+			SUT := cache.New(fs, mockConfig{})
 			SUT.Fetch("foo", target, build)
 			expected := 0
 			actual := fs.written
@@ -90,7 +90,7 @@ func TestCache(t *testing.T) {
 			build := func() ([]byte, error) {
 				return []byte{}, nil
 			}
-			SUT := cache.New(fs, ".json")
+			SUT := cache.New(fs, mockConfig{})
 			SUT.Fetch("foo", target, build)
 			expected := 0
 			actual := fs.written
@@ -105,7 +105,7 @@ func TestCache(t *testing.T) {
 			build := func() ([]byte, error) {
 				return []byte{}, nil
 			}
-			SUT := cache.New(fs, ".json")
+			SUT := cache.New(fs, mockConfig{})
 			err := SUT.Fetch("foo", target, build)
 			expected := true
 			actual := err != nil
@@ -120,7 +120,7 @@ func TestCache(t *testing.T) {
 			build := func() ([]byte, error) {
 				return []byte{}, errors.New("foo")
 			}
-			SUT := cache.New(fs, ".json")
+			SUT := cache.New(fs, mockConfig{})
 			err := SUT.Fetch("foo", target, build)
 			expected := true
 			actual := err != nil
@@ -135,7 +135,7 @@ func TestCache(t *testing.T) {
 			build := func() ([]byte, error) {
 				return []byte{}, nil
 			}
-			SUT := cache.New(fs, ".json")
+			SUT := cache.New(fs, mockConfig{})
 			err := SUT.Fetch("foo", target, build)
 			expected := true
 			actual := err != nil
@@ -150,7 +150,7 @@ func TestCache(t *testing.T) {
 			build := func() ([]byte, error) {
 				return []byte(`{"data":{"foo":"bar"}}`), nil
 			}
-			SUT := cache.New(fs, ".json")
+			SUT := cache.New(fs, mockConfig{})
 			err := SUT.Fetch("foo", target, build)
 			expected := true
 			actual := err != nil
@@ -177,3 +177,7 @@ func (m *mockFS) WriteAll(name string, data []byte) error {
 type mockData struct {
 	Data map[string]string `json:"data"`
 }
+
+type mockConfig struct{}
+
+func (mockConfig) DataFormat() string { return ".json" }

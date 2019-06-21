@@ -14,14 +14,18 @@ type extractor interface {
 	Close()
 }
 
+type config interface {
+	AudioFormat() string
+}
+
 type Parser struct {
 	walker    walker
 	extractor extractor
-	whitelist string
+	cfg       config
 }
 
-func New(walker walker, extractor extractor, whitelist string) *Parser {
-	return &Parser{walker, extractor, whitelist}
+func New(walker walker, extractor extractor, cfg config) *Parser {
+	return &Parser{walker, extractor, cfg}
 }
 
 func (p *Parser) Parse(root string) error {
@@ -35,7 +39,7 @@ func (p *Parser) visit(path string, info os.FileInfo, err error) error {
 		return err
 	case info.IsDir():
 		return nil
-	case filepath.Ext(path) != p.whitelist:
+	case filepath.Ext(path) != p.cfg.AudioFormat():
 		return nil
 	default:
 		p.extractor.Extract(path)
