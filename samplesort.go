@@ -1,7 +1,9 @@
 package samplesort
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"sync"
@@ -21,7 +23,7 @@ const (
 	Version  string = "v2.1_beta2-linux-i686"
 )
 
-func SampleSort(executable string, configs ...config) error {
+func SampleSort(executable string, output io.Writer, configs ...config) error {
 	cfg := newConfig(configs...)
 
 	bin, err := which(executable, cfg.DataFormat())
@@ -63,14 +65,21 @@ func SampleSort(executable string, configs ...config) error {
 		return err
 	}
 
-	fmt.Println(col)
+	fmt.Fprintln(output, col)
 
 	return nil
 }
 
-func which(path, output string) (func(src string) ([]byte, error), error) {
+// TODO: is this the way to do things right?
+// Ensure we use a compatible version of the binary and contains the
+// coupling to the external command execution method.
+// We do JSON decoding at this level because this is the one format we
+// don't control and which might change over time according to the
+// decisions of Essentia developers.
+func which(path, output string) (func(src string) (map[string]interface{}, error), error) {
 	fd, err := fs.Open(path)
 	defer fd.Close()
+
 	switch {
 	case err != nil:
 		return nop,
@@ -82,16 +91,21 @@ func which(path, output string) (func(src string) ([]byte, error), error) {
 		return nop,
 			fmt.Errorf("Expected exactly one argument, got: %d", len(os.Args)-1)
 	}
-	return func(src string) ([]byte, error) {
+
+	return func(src string) (map[string]interface{}, error) {
 		dst := path + output
 		err := exec.Command(path, src, dst).Run()
 		if err != nil {
-			return []byte{}, err
+			return nil, err
 		}
-		return fs.ReadAll(dst)
+		res := make(map[string]interface{})
+		content, err := fs.ReadAll(dst)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(content, res)
+		return res, err
 	}, nil
 }
 
-func nop(string) ([]byte, error) {
-	return []byte{}, nil
-}
+func nop(string) (map[string]interface{}, error) { return nil, nil }

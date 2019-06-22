@@ -1,6 +1,7 @@
 package analyze_test
 
 import (
+	"encoding/json"
 	"samplesort/analyze"
 	"testing"
 )
@@ -40,18 +41,24 @@ type mockDataset struct {
 	nothing bool
 }
 
+var features = [][]float64{
+	{1, 2, 3},
+	{4, 5, 6},
+}
+
+var centers = []int{1, 2}
+
 func (d *mockDataset) Features() [][]float64 {
 	if d.nothing {
 		return [][]float64{}
 	}
 	d.flag++
-	return [][]float64{
-		{1, 2, 3},
-		{4, 5, 6},
-	}
+	return features
 }
 
-func (d *mockDataset) Sort(centers []int) { d.flag += len(centers) }
+func (d *mockDataset) Sort(centers []int) {
+	d.flag += len(centers)
+}
 
 type mockEngine struct{}
 
@@ -60,19 +67,33 @@ func (mockEngine) Distance(s1, s2 []float64) (float64, error) { return 0, nil }
 
 type mockCache struct{ err error }
 
-func (mockCache) Serialize(v interface{}) ([]byte, error) {
-	return nil, nil
-}
-
 func (m *mockCache) Fetch(
 	key string,
 	target interface{},
-	build func() ([]byte, error),
+	build func() (interface{}, error),
 ) error {
-	if m.err == nil {
-		build()
+	if m.err != nil {
+		return m.err
 	}
-	return m.err
+	build()
+	switch target.(type) {
+	case *[][]float64:
+		unmarshal(features, target)
+	case *[]int:
+		unmarshal(centers, target)
+	}
+	return nil
+}
+
+func unmarshal(data, target interface{}) {
+	tmp, err := json.Marshal(data)
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(tmp, target)
+	if err != nil {
+		panic(err)
+	}
 }
 
 type mockConfig struct{}

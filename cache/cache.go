@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"bytes"
 	"encoding/json"
 	"path/filepath"
 )
@@ -29,7 +28,7 @@ func New(fs storage, cfg config) *Cache {
 func (c *Cache) Fetch(
 	key string,
 	target interface{},
-	build func() ([]byte, error),
+	build func() (interface{}, error),
 ) error {
 	var content []byte
 	var err error
@@ -37,24 +36,33 @@ func (c *Cache) Fetch(
 	if err != nil {
 		return err
 	}
-	hit := c.fs.Exists(path)
-	if hit {
-		content, err = c.fs.ReadAll(path)
-	} else {
-		content, err = build()
+	if c.fs.Exists(path) {
+		return c.fromStorage(path, target)
 	}
+	data, err := build()
 	if err != nil {
 		return err
 	}
-	b := bytes.NewBuffer(content)
-	err = json.NewDecoder(b).Decode(target)
+	content, err = json.Marshal(data)
 	if err != nil {
 		return err
 	}
-	if !hit {
-		err = c.fs.WriteAll(path, content)
-	}
+	err = c.fs.WriteAll(path, content)
 	if err != nil {
+		return err
+	}
+	if c.fs.Exists(path) {
+		return c.fromStorage(path, target)
+	}
+	return nil
+}
+
+func (c *Cache) fromStorage(path string, target interface{}) error {
+	content, err := c.fs.ReadAll(path)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(content, target); err != nil {
 		return err
 	}
 	return nil
@@ -71,9 +79,4 @@ func (c *Cache) path(key string) (string, error) {
 		return "", err
 	}
 	return filepath.Join(root, rel), nil
-}
-
-// TODO: improve the way we can enforce the storage format.
-func (Cache) Serialize(v interface{}) ([]byte, error) {
-	return json.Marshal(v)
 }

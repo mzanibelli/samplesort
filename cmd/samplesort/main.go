@@ -15,6 +15,7 @@ func main() {
 	logger := log.New(os.Stderr, "", log.LstdFlags)
 	err := samplesort.SampleSort(
 		os.Getenv(env),
+		os.Stdout,
 		samplesort.WithFileSystemRoot(os.Args[1]),
 		samplesort.WithLogger(logger),
 	)

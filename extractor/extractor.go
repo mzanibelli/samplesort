@@ -3,10 +3,10 @@ package extractor
 import "fmt"
 
 type cache interface {
-	Fetch(key string, target interface{}, build func() ([]byte, error)) error
+	Fetch(key string, target interface{}, build func() (interface{}, error)) error
 }
 
-type buildFunc func(src string) ([]byte, error)
+type buildFunc func(src string) (map[string]interface{}, error)
 
 type Extractor struct {
 	cache  cache
@@ -24,7 +24,7 @@ func (e *Extractor) Extract(src string) {
 		path: src,
 		data: make(map[string]interface{}, 0),
 	}
-	err := e.cache.Fetch(src, &(p.data), func() ([]byte, error) {
+	err := e.cache.Fetch(src, &(p.data), func() (interface{}, error) {
 		return e.build(src)
 	})
 	if err != nil {

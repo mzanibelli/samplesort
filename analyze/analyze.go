@@ -15,8 +15,7 @@ type engine interface {
 }
 
 type cache interface {
-	Fetch(key string, target interface{}, build func() ([]byte, error)) error
-	Serialize(v interface{}) ([]byte, error)
+	Fetch(key string, target interface{}, build func() (interface{}, error)) error
 }
 
 type config interface {
@@ -49,9 +48,8 @@ func (a *Analyze) Analyze() error {
 
 	a.cfg.Log("gathering features...")
 	err = a.cache.Fetch("features", &rawFeatures,
-		func() ([]byte, error) {
-			rawFeatures = a.data.Features()
-			return a.cache.Serialize(rawFeatures)
+		func() (interface{}, error) {
+			return a.data.Features(), nil
 		})
 	if err != nil {
 		return err
@@ -66,13 +64,9 @@ func (a *Analyze) Analyze() error {
 
 	a.cfg.Log("computing kmeans...")
 	err = a.cache.Fetch("kmeans", &result,
-		func() ([]byte, error) {
-			result, err = kmeans.Kmeans(normalizedFeatures, a.cfg.Size(),
+		func() (interface{}, error) {
+			return kmeans.Kmeans(normalizedFeatures, a.cfg.Size(),
 				a.stats.Distance, a.cfg.MaxIterations())
-			if err != nil {
-				return nil, err
-			}
-			return a.cache.Serialize(result)
 		})
 	if err != nil {
 		return err
