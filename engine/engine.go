@@ -2,7 +2,6 @@ package engine
 
 import (
 	"encoding/json"
-	"log"
 	"math"
 	"sort"
 
@@ -30,7 +29,6 @@ func (e *Engine) Distance(sampleFeatures, meanOfCluster []float64) (float64, err
 	for i := range sampleFeatures {
 		res += math.Abs(sampleFeatures[i] - meanOfCluster[i])
 	}
-	log.Println(res)
 	return res, nil
 }
 

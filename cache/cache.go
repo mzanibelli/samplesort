@@ -19,6 +19,7 @@ type storage interface {
 type config interface {
 	FileSystemRoot() string
 	DataFormat() string
+	EnableCache() bool
 }
 
 func New(fs storage, cfg config) *Cache {
@@ -36,7 +37,7 @@ func (c *Cache) Fetch(
 	if err != nil {
 		return err
 	}
-	if c.fs.Exists(path) {
+	if c.cfg.EnableCache() && c.fs.Exists(path) {
 		return c.fromStorage(path, target)
 	}
 	data, err := build()

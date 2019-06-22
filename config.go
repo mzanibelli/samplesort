@@ -11,6 +11,7 @@ const (
 	defaultSize           int     = 5
 	defaultMaxIterations  int     = 10000
 	defaultMaxZScore      float64 = 0.5
+	defaultEnableCache    bool    = true
 )
 
 type parameters struct {
@@ -20,6 +21,7 @@ type parameters struct {
 	size           int
 	maxIterations  int
 	maxZScore      float64
+	enableCache    bool
 	logger         *log.Logger
 }
 
@@ -29,6 +31,7 @@ func (p *parameters) DataFormat() string     { return p.dataFormat }
 func (p *parameters) Size() int              { return p.size }
 func (p *parameters) MaxIterations() int     { return p.maxIterations }
 func (p *parameters) MaxZScore() float64     { return p.maxZScore }
+func (p *parameters) EnableCache() bool      { return p.enableCache }
 
 type config func(p *parameters) error
 
@@ -40,6 +43,7 @@ func newConfig(configs ...config) *parameters {
 		size:           defaultSize,
 		maxIterations:  defaultMaxIterations,
 		maxZScore:      defaultMaxZScore,
+		enableCache:    defaultEnableCache,
 		logger:         nil,
 	}
 	for _, setConfigTo := range configs {
@@ -86,6 +90,13 @@ func WithMaxIterations(value int) config {
 func WithMaxZScore(value float64) config {
 	return func(p *parameters) error {
 		p.maxZScore = value
+		return nil
+	}
+}
+
+func WithoutCache() config {
+	return func(p *parameters) error {
+		p.enableCache = false
 		return nil
 	}
 }

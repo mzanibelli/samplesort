@@ -12,7 +12,7 @@ func TestExtractor(t *testing.T) {
 			ok := false
 			SUT := extractor.New(
 				&mockCache{nil},
-				func(src string) (map[string]interface{}, error) {
+				func(src string) (interface{}, error) {
 					ok = true
 					if src != "hello" {
 						t.Error("path not provided to build func")
@@ -36,7 +36,7 @@ func TestExtractor(t *testing.T) {
 		func(t *testing.T) {
 			SUT := extractor.New(
 				&mockCache{errors.New("foo")},
-				func(string) (map[string]interface{}, error) { return nil, nil },
+				func(string) (interface{}, error) { return nil, nil },
 			)
 			go SUT.Extract("hello")
 			select {
@@ -51,7 +51,7 @@ func TestExtractor(t *testing.T) {
 		func(t *testing.T) {
 			SUT := extractor.New(
 				&mockCache{nil},
-				func(string) (map[string]interface{}, error) { return nil, nil },
+				func(string) (interface{}, error) { return nil, nil },
 			)
 			go SUT.Extract("hello")
 			select {

@@ -152,6 +152,22 @@ func TestCache(t *testing.T) {
 				t.Errorf("expected: %v, actual: %v", expected, actual)
 			}
 		})
+	t.Run("it should build data anyway if cache is disabled",
+		func(t *testing.T) {
+			fs := mkFs("", nil, true)
+			target := mkData()
+			build := func() (interface{}, error) {
+				return mkData("foo", "bar"), nil
+			}
+			SUT := cache.New(fs, noCache())
+			err := SUT.Fetch("foo", target, build)
+			t.Log(err)
+			expected := "bar"
+			actual := target.Data["foo"]
+			if expected != actual {
+				t.Errorf("expected: %v, actual: %v", expected, actual)
+			}
+		})
 }
 
 func TestPath(t *testing.T) {
@@ -246,19 +262,25 @@ type mockData struct {
 }
 
 func defaultConfig() *mockConfig {
-	return &mockConfig{".", ".json"}
+	return &mockConfig{".", ".json", true}
+}
+
+func noCache() *mockConfig {
+	return &mockConfig{".", ".json", false}
 }
 
 func withRoot(root string) *mockConfig {
-	return &mockConfig{root, ".json"}
+	return &mockConfig{root, ".json", true}
 }
 
 type mockConfig struct {
 	root      string
 	extension string
+	enable    bool
 }
 
 func (m *mockConfig) FileSystemRoot() string { return m.root }
 func (m *mockConfig) DataFormat() string     { return m.extension }
+func (m *mockConfig) EnableCache() bool      { return m.enable }
 
 var nop = func() (interface{}, error) { return nil, nil }

@@ -76,7 +76,7 @@ func SampleSort(executable string, output io.Writer, configs ...config) error {
 // We do JSON decoding at this level because this is the one format we
 // don't control and which might change over time according to the
 // decisions of Essentia developers.
-func which(path, output string) (func(src string) (map[string]interface{}, error), error) {
+func which(path, output string) (func(src string) (interface{}, error), error) {
 	fd, err := fs.Open(path)
 	defer fd.Close()
 
@@ -92,7 +92,7 @@ func which(path, output string) (func(src string) (map[string]interface{}, error
 			fmt.Errorf("Expected exactly one argument, got: %d", len(os.Args)-1)
 	}
 
-	return func(src string) (map[string]interface{}, error) {
+	return func(src string) (interface{}, error) {
 		dst := path + output
 		err := exec.Command(path, src, dst).Run()
 		if err != nil {
@@ -103,9 +103,9 @@ func which(path, output string) (func(src string) (map[string]interface{}, error
 		if err != nil {
 			return nil, err
 		}
-		err = json.Unmarshal(content, res)
+		err = json.Unmarshal(content, &res)
 		return res, err
 	}, nil
 }
 
-func nop(string) (map[string]interface{}, error) { return nil, nil }
+func nop(string) (interface{}, error) { return nil, nil }

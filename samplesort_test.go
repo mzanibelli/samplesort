@@ -15,6 +15,7 @@ func TestOutputWithSingleSample(t *testing.T) {
 		"./bin/streaming_extractor_music",
 		output,
 		samplesort.WithFileSystemRoot(root),
+		samplesort.WithoutCache(),
 	)
 	expected := strings.Join([]string{
 		filepath.Join(root, "sample.wav"),
@@ -25,8 +26,8 @@ func TestOutputWithSingleSample(t *testing.T) {
 	}
 }
 
+// TODO: this is the main thing to make work as a first step.
 func TestSameSamplesShouldBeSideBySide(t *testing.T) {
-	t.Skip("not ready yet")
 	root := "./testdata/duplicates"
 	output := bytes.NewBuffer([]byte{})
 	samplesort.SampleSort(
@@ -34,8 +35,8 @@ func TestSameSamplesShouldBeSideBySide(t *testing.T) {
 		output,
 		samplesort.WithFileSystemRoot(root),
 		samplesort.WithSize(2),
+		samplesort.WithoutCache(),
 	)
-	t.Error()
 	expected := strings.Join([]string{
 		filepath.Join(root, "a.wav"),
 		filepath.Join(root, "b.wav"),
