@@ -79,4 +79,4 @@ type mockConfig struct{}
 
 func (mockConfig) Size() int             { return 5 }
 func (mockConfig) MaxIterations() int    { return 10 }
-func (mockConfig) Err(vs ...interface{}) {}
+func (mockConfig) Log(vs ...interface{}) {}

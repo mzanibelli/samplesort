@@ -1,9 +1,7 @@
 package samplesort
 
 import (
-	"io"
 	"log"
-	"os"
 )
 
 const (
@@ -22,9 +20,7 @@ type parameters struct {
 	size           int
 	maxIterations  int
 	maxZScore      float64
-	stdout         io.Writer
-	stderr         io.Writer
-	loggers        []*log.Logger
+	logger         *log.Logger
 }
 
 func (p *parameters) FileSystemRoot() string { return p.fileSystemRoot }
@@ -44,9 +40,7 @@ func newConfig(configs ...config) *parameters {
 		size:           defaultSize,
 		maxIterations:  defaultMaxIterations,
 		maxZScore:      defaultMaxZScore,
-		stdout:         os.Stdout,
-		stderr:         os.Stderr,
-		loggers:        make([]*log.Logger, 0),
+		logger:         nil,
 	}
 	for _, setConfigTo := range configs {
 		setConfigTo(params)
@@ -96,25 +90,16 @@ func WithMaxZScore(value float64) config {
 	}
 }
 
-func WithLoggers(loggers ...*log.Logger) config {
+func WithLogger(value *log.Logger) config {
 	return func(p *parameters) error {
-		p.loggers = loggers
+		p.logger = value
 		return nil
 	}
 }
 
-// TODO: why is the config taking care of the logging?
-// This is convenient but weird.
-func (p *parameters) Out(vs ...interface{}) {
-	for _, l := range p.loggers {
-		l.SetOutput(p.stdout)
-		l.Println(vs...)
+func (p *parameters) Log(vs ...interface{}) {
+	if p.logger == nil {
+		return
 	}
-}
-
-func (p *parameters) Err(vs ...interface{}) {
-	for _, l := range p.loggers {
-		l.SetOutput(p.stderr)
-		l.Println(vs...)
-	}
+	p.logger.Println(vs...)
 }

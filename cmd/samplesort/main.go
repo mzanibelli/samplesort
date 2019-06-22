@@ -16,7 +16,7 @@ func main() {
 	err := samplesort.SampleSort(
 		os.Getenv(env),
 		samplesort.WithFileSystemRoot(os.Args[1]),
-		samplesort.WithLoggers(logger),
+		samplesort.WithLogger(logger),
 	)
 	usage(err)
 }

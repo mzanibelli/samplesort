@@ -41,7 +41,7 @@ func SampleSort(executable string, configs ...config) error {
 
 	go func() {
 		for err := range ext.Err() {
-			cfg.Err(err)
+			cfg.Log(err)
 		}
 	}()
 

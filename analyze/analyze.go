@@ -22,7 +22,7 @@ type cache interface {
 type config interface {
 	Size() int
 	MaxIterations() int
-	Err(vs ...interface{})
+	Log(vs ...interface{})
 }
 
 type Analyze struct {
@@ -48,7 +48,7 @@ func (a *Analyze) Analyze() error {
 	var result []int
 	var err error
 
-	a.cfg.Err("gathering features...")
+	a.cfg.Log("gathering features...")
 	err = a.cache.Fetch("features", &rawFeatures,
 		func() ([]byte, error) {
 			rawFeatures = a.data.Features()
@@ -62,10 +62,10 @@ func (a *Analyze) Analyze() error {
 		return nil
 	}
 
-	a.cfg.Err("normalizing features...")
+	a.cfg.Log("normalizing features...")
 	normalizedFeatures = a.stats.Normalize(rawFeatures)
 
-	a.cfg.Err("computing kmeans...")
+	a.cfg.Log("computing kmeans...")
 	err = a.cache.Fetch("kmeans", &result,
 		func() ([]byte, error) {
 			result, err = kmeans.Kmeans(normalizedFeatures, a.cfg.Size(),
@@ -79,7 +79,7 @@ func (a *Analyze) Analyze() error {
 		return err
 	}
 
-	a.cfg.Err("sorting dataset...")
+	a.cfg.Log("sorting dataset...")
 	a.data.Sort(result)
 
 	return nil
