@@ -41,7 +41,6 @@ func New(data dataset, stats engine, storage cache, cfg config) *Analyze {
 	}
 }
 
-// TODO: use the in-house distance function.
 func (a *Analyze) Analyze() error {
 	var rawFeatures [][]float64
 	var normalizedFeatures [][]float64
@@ -69,7 +68,7 @@ func (a *Analyze) Analyze() error {
 	err = a.cache.Fetch("kmeans", &result,
 		func() ([]byte, error) {
 			result, err = kmeans.Kmeans(normalizedFeatures, a.cfg.Size(),
-				kmeans.SquaredEuclideanDistance, a.cfg.MaxIterations())
+				a.stats.Distance, a.cfg.MaxIterations())
 			if err != nil {
 				return nil, err
 			}
