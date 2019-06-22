@@ -75,6 +75,9 @@ func (c *Cache) path(key string) (string, error) {
 	if filepath.IsAbs(file) {
 		return file, nil
 	}
+	if filepath.Base(file) == file {
+		return filepath.Join(root, file), nil
+	}
 	rel, err := filepath.Rel(root, file)
 	if err != nil {
 		return "", err

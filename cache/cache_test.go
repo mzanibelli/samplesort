@@ -190,6 +190,12 @@ func TestPath(t *testing.T) {
 			key:      "./data/foo.wav",
 			expected: "data/foo.wav.json",
 		},
+		{
+			name:     "it should not go back to current directory",
+			root:     "./testdata/duplicates",
+			key:      "kmeans",
+			expected: "testdata/duplicates/kmeans.json",
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.name,
