@@ -33,7 +33,10 @@ func (c *Cache) Fetch(
 ) error {
 	var content []byte
 	var err error
-	path := c.path(key)
+	path, err := c.path(key)
+	if err != nil {
+		return err
+	}
 	hit := c.fs.Exists(path)
 	if hit {
 		content, err = c.fs.ReadAll(path)
@@ -57,18 +60,17 @@ func (c *Cache) Fetch(
 	return nil
 }
 
-// TODO: write tests for storage path.
-func (c *Cache) path(key string) string {
+func (c *Cache) path(key string) (string, error) {
 	root := c.cfg.FileSystemRoot()
 	file := key + c.cfg.DataFormat()
 	if filepath.IsAbs(file) {
-		return file
+		return file, nil
 	}
-	rel, err := filepath.Rel(".", file)
+	rel, err := filepath.Rel(root, file)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
-	return filepath.Join(root, rel)
+	return filepath.Join(root, rel), nil
 }
 
 // TODO: improve the way we can enforce the storage format.
