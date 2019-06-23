@@ -8,19 +8,21 @@ import (
 	"testing/quick"
 )
 
+var seed int = 42
+
 type generator [][]float64
 
 // Generate makes sure generated values are always slices of same-length
 // slices of float64.
-func (result generator) Generate(r *rand.Rand, size int) reflect.Value {
-	result = make([][]float64, size, size)
-	for i := range result {
-		result[i] = make([]float64, size, size)
-		for j := range result[i] {
-			result[i][j] = rand.Float64() * float64(rand.Int()*10)
+func (g generator) Generate(r *rand.Rand, size int) reflect.Value {
+	g = make([][]float64, size, size)
+	for i := range g {
+		g[i] = make([]float64, size, size)
+		for j := range g[i] {
+			g[i][j] = rand.Float64() * float64(rand.Int()*10)
 		}
 	}
-	return reflect.ValueOf(result)
+	return reflect.ValueOf(g)
 }
 
 func getData(g generator, seed int) [][]float64 {
@@ -40,7 +42,6 @@ func TestNormalize(t *testing.T) {
 	if testing.Short() {
 		return
 	}
-	seed := 42
 	t.Run("output values should always be between 0 and 1",
 		func(t *testing.T) {
 			checkRange := func(g generator) bool {
@@ -60,42 +61,34 @@ func TestNormalize(t *testing.T) {
 				return true
 			}
 			if err := quick.Check(checkRange, nil); err != nil {
-				t.Error("invalid output range")
+				t.Error(err)
 			}
 		})
 }
 
 func TestDistance(t *testing.T) {
-	t.Skip("TODO: find the correct way to compute distance")
-	cases := []struct {
-		name   string
-		input  struct{ i, j []float64 }
-		output float64
-	}{
-		{
-			name: "obvious",
-			input: struct{ i, j []float64 }{
-				[]float64{5, 19.658, 42.356, -1256},
-				[]float64{3, 12.0, 38.85, -1.7},
-			},
-			output: 2,
-		},
+	if testing.Short() {
+		return
 	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			SUT := engine.New(mockConfig{})
-			SUT.Normalize([][]float64{
-				{10, 20, 30, 40},
-				{1, 2, 3, 4},
-				// stds { 6.36, 12.72, 19.09, 25.45 }
-			})
-			expected := c.output
-			actual, _ := SUT.Distance(c.input.i, c.input.j)
-			if expected != actual {
-				t.Errorf("distance mismatch: expected: %v, actual: %v", expected, actual)
+	t.Run("distance between same slices should be 0",
+		func(t *testing.T) {
+			checkRange := func(g generator) bool {
+				data := getData(g, seed)
+				SUT := engine.New(mockConfig{})
+				SUT.Normalize(data)
+				for i := range data {
+					input := data[i]
+					if v, _ := SUT.Distance(input, input); v != 0 {
+						t.Log("input:", data[i])
+						return false
+					}
+				}
+				return true
+			}
+			if err := quick.Check(checkRange, nil); err != nil {
+				t.Error(err)
 			}
 		})
-	}
 }
 
 type mockConfig struct{}
