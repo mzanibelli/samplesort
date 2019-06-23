@@ -19,8 +19,10 @@ func TestCollection(t *testing.T) {
 	t.Run("it should sort entities",
 		func(t *testing.T) {
 			SUT := makeSUT()
-			SUT.Sort([]int{1, 0})
-			expected := "doejohn"
+			SUT.Append(testEntity{"alice", []string{"foo"}, []float64{3.0}})
+			SUT.Append(testEntity{"bob", []string{"foo"}, []float64{4.0}})
+			SUT.Sort([]int{2, 0, 1, 3})
+			expected := "doealicejohnbob"
 			actual := SUT.String()
 			if expected != actual {
 				t.Errorf("expected: %v, actual: %v", expected, actual)

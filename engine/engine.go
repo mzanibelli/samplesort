@@ -23,10 +23,9 @@ func New(cfg config) *Engine {
 	}
 }
 
-// TODO: continue investigation.
 func (e *Engine) Distance(sampleFeatures, meanOfCluster []float64) (float64, error) {
 	var res float64 = 0
-	for i := range sampleFeatures {
+	for i := range e.stats {
 		res += math.Abs(sampleFeatures[i] - meanOfCluster[i])
 	}
 	return res, nil
@@ -105,6 +104,7 @@ func (s *featStat) setMinMax(zscore float64) {
 }
 
 func (s *featStat) normalize(n float64) float64 {
+	return n
 	norm := (n - s.min) / (s.max - s.min)
 	switch {
 	case norm >= 1:

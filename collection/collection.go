@@ -15,11 +15,16 @@ type entity interface {
 
 type Collection struct {
 	entities []entity
+	centers  []int
 	mu       *sync.Mutex
 }
 
 func New() *Collection {
-	return &Collection{make([]entity, 0), new(sync.Mutex)}
+	return &Collection{
+		entities: make([]entity, 0),
+		centers:  nil,
+		mu:       new(sync.Mutex),
+	}
 }
 
 func (c *Collection) Append(e entity) {
@@ -60,6 +65,19 @@ func (c *Collection) Features() [][]float64 {
 	return res
 }
 
+func (c *Collection) Len() int {
+	return len(c.entities)
+}
+
+func (c *Collection) Swap(i, j int) {
+	c.entities[i], c.entities[j] = c.entities[j], c.entities[i]
+	c.centers[i], c.centers[j] = c.centers[j], c.centers[i]
+}
+
+func (c *Collection) Less(i, j int) bool {
+	return c.centers[i] < c.centers[j]
+}
+
 func (c *Collection) Sort(centers []int) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -67,9 +85,8 @@ func (c *Collection) Sort(centers []int) {
 		panic(fmt.Sprintf("dataset and analysis size mismatch: %d / %d",
 			len(c.entities), len(centers)))
 	}
-	sort.Slice(c.entities, func(i, j int) bool {
-		return centers[i] < centers[j]
-	})
+	c.centers = centers
+	sort.Sort(c)
 }
 
 func (c *Collection) String() string {
@@ -79,5 +96,3 @@ func (c *Collection) String() string {
 	}
 	return b.String()
 }
-
-func (c *Collection) Size() int { return len(c.entities) }

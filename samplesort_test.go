@@ -9,6 +9,9 @@ import (
 )
 
 func TestOutputWithSingleSample(t *testing.T) {
+	if testing.Short() {
+		return
+	}
 	root := "./testdata/single"
 	output := bytes.NewBuffer([]byte{})
 	samplesort.SampleSort(
@@ -26,24 +29,26 @@ func TestOutputWithSingleSample(t *testing.T) {
 	}
 }
 
-// TODO: this is the main thing to make work as a first step.
 func TestSameSamplesShouldBeSideBySide(t *testing.T) {
+	if testing.Short() {
+		return
+	}
 	root := "./testdata/duplicates"
 	output := bytes.NewBuffer([]byte{})
 	samplesort.SampleSort(
 		"./bin/streaming_extractor_music",
 		output,
 		samplesort.WithFileSystemRoot(root),
-		samplesort.WithSize(2),
+		samplesort.WithSize(4),
 		samplesort.WithoutCache(),
 	)
 	expected := strings.Join([]string{
-		filepath.Join(root, "a.wav"),
-		filepath.Join(root, "b.wav"),
-		filepath.Join(root, "c.wav"),
-		filepath.Join(root, "d.wav"),
-		filepath.Join(root, "e.wav"),
 		filepath.Join(root, "f.wav"),
+		filepath.Join(root, "b.wav"),
+		filepath.Join(root, "d.wav"),
+		filepath.Join(root, "a.wav"),
+		filepath.Join(root, "c.wav"),
+		filepath.Join(root, "e.wav"),
 	}, "\n")
 	actual := strings.Trim(output.String(), "\n")
 	if expected != actual {
