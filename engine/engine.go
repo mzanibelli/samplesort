@@ -25,7 +25,7 @@ func (e *Engine) Distance(sampleFeatures, meanOfCluster []float64) (float64, err
 	var res float64 = 0
 	for i := range sampleFeatures {
 		difference := math.Abs(sampleFeatures[i] - meanOfCluster[i])
-		threshold := e.stats[i].normalize(e.stats[i].std / 100)
+		threshold := e.stats[i].std / 2
 		if difference > threshold {
 			res += 1
 		}
@@ -38,10 +38,11 @@ func (e *Engine) String() string {
 	return string(json)
 }
 
+// TODO: make quantile configurable.
 func (e *Engine) Normalize(data [][]float64) func(i, j int, v float64) float64 {
 	e.feed(data)
 	return func(i, j int, v float64) float64 {
-		return e.stats[j].normalize(v)
+		return math.Min(e.stats[j].quantile(0.75), v)
 	}
 }
 
@@ -97,21 +98,6 @@ func (s *featStat) setMinMax(threshold float64) {
 		}
 		s.min = math.Min(s.min, v)
 		s.max = math.Max(s.max, v)
-	}
-}
-
-func (s *featStat) normalize(n float64) float64 {
-	if s.max == s.min {
-		return 0
-	}
-	norm := (n - s.min) / (s.max - s.min)
-	switch {
-	case norm >= 1:
-		return 1
-	case norm <= 0:
-		return 0
-	default:
-		return norm
 	}
 }
 

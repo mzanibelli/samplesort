@@ -42,7 +42,7 @@ func TestNormalize(t *testing.T) {
 	if testing.Short() {
 		return
 	}
-	t.Run("output values should always be between 0 and 1",
+	t.Run("output values should always be lower or equal than input values",
 		func(t *testing.T) {
 			checkRange := func(g generator) bool {
 				data := getData(g, seed)
@@ -51,8 +51,8 @@ func TestNormalize(t *testing.T) {
 					for j := range data[i] {
 						input := data[i][j]
 						output := SUT(i, j, input)
-						if output < 0 || output > 1 {
-							t.Log("input:", data[i][j])
+						if output > input {
+							t.Log("input:", input)
 							t.Log("output:", output)
 							return false
 						}
