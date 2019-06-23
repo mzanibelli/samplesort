@@ -168,6 +168,24 @@ func TestCache(t *testing.T) {
 				t.Errorf("expected: %v, actual: %v", expected, actual)
 			}
 		})
+	t.Run("it should return early if the build command wrote the file",
+		func(t *testing.T) {
+			fs := mkFs("", nil, false)
+			target := mkData()
+			build := func() (interface{}, error) {
+				fs.content = []byte(`{"data":{"foo":"bar"}}`)
+				fs.exists = true
+				return nil, nil
+			}
+			SUT := cache.New(fs, defaultConfig())
+			err := SUT.Fetch("foo", target, build)
+			t.Log(err)
+			expected := "bar"
+			actual := target.Data["foo"]
+			if expected != actual {
+				t.Errorf("expected: %v, actual: %v", expected, actual)
+			}
+		})
 }
 
 func TestPath(t *testing.T) {

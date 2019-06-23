@@ -14,12 +14,12 @@ func TestOutputWithSingleSample(t *testing.T) {
 	}
 	root := "./testdata/single"
 	output := bytes.NewBuffer([]byte{})
-	samplesort.SampleSort(
+	s := samplesort.New(
 		"./bin/streaming_extractor_music",
-		output,
 		samplesort.WithFileSystemRoot(root),
 		samplesort.WithoutCache(),
 	)
+	s.WriteTo(output)
 	expected := strings.Join([]string{
 		filepath.Join(root, "sample.wav"),
 	}, "\n")
@@ -35,13 +35,13 @@ func TestSameSamplesShouldBeSideBySide(t *testing.T) {
 	}
 	root := "./testdata/duplicates"
 	output := bytes.NewBuffer([]byte{})
-	samplesort.SampleSort(
+	s := samplesort.New(
 		"./bin/streaming_extractor_music",
-		output,
 		samplesort.WithFileSystemRoot(root),
 		samplesort.WithSize(4),
 		samplesort.WithoutCache(),
 	)
+	s.WriteTo(output)
 	expected := strings.Join([]string{
 		filepath.Join(root, "f.wav"),
 		filepath.Join(root, "b.wav"),

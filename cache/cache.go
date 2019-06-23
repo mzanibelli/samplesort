@@ -37,12 +37,19 @@ func (c *Cache) Fetch(
 	if err != nil {
 		return err
 	}
-	if c.cfg.EnableCache() && c.fs.Exists(path) {
+	hit := c.fs.Exists(path)
+	if c.cfg.EnableCache() && hit {
 		return c.fromStorage(path, target)
 	}
 	data, err := build()
 	if err != nil {
 		return err
+	}
+	// Edge-case: if cache is disabled and build() did not overwrite the
+	// output file, we get the cached data that could have been written by
+	// a preceding successful build instead of an error.
+	if data == nil && c.fs.Exists(path) {
+		return c.fromStorage(path, target)
 	}
 	content, err = json.Marshal(data)
 	if err != nil {
