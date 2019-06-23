@@ -62,7 +62,12 @@ func (d *mockDataset) Sort(centers []int) {
 
 type mockEngine struct{}
 
-func (mockEngine) Normalize(data [][]float64) [][]float64     { return data }
+func (mockEngine) Normalize(data [][]float64) func(i, j int, v float64) float64 {
+	return func(i, j int, v float64) float64 {
+		return v
+	}
+}
+
 func (mockEngine) Distance(s1, s2 []float64) (float64, error) { return 0, nil }
 
 type mockCache struct{ err error }

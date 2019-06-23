@@ -11,7 +11,7 @@ type dataset interface {
 }
 
 type engine interface {
-	Normalize([][]float64) [][]float64
+	Normalize([][]float64) func(i, j int, v float64) float64
 	Distance(s1, s2 []float64) (float64, error)
 }
 
@@ -43,7 +43,6 @@ func New(data dataset, stats engine, storage cache, cfg config) *Analyze {
 
 func (a *Analyze) Analyze() error {
 	var rawFeatures [][]float64
-	var normalizedFeatures [][]float64
 	var result []int
 	var err error
 
@@ -59,20 +58,14 @@ func (a *Analyze) Analyze() error {
 		return nil
 	}
 
-	r, c := len(rawFeatures), len(rawFeatures[0])
-	d := mat.NewDense(r, c, make([]float64, r*c, r*c))
-	for i := range rawFeatures {
-		d.SetRow(i, rawFeatures[i])
-	}
-
 	a.cfg.Log("normalizing features...")
-	normalizedFeatures = a.stats.Normalize(rawFeatures)
+	p := newPayload(rawFeatures)
+	p.apply(a.stats.Normalize(rawFeatures))
 
 	a.cfg.Log("computing kmeans...")
 	err = a.cache.Fetch("kmeans", &result,
 		func() (interface{}, error) {
-			return kmeans.Kmeans(normalizedFeatures, a.cfg.Size(),
-				a.stats.Distance, a.cfg.MaxIterations())
+			return a.kmeans(p.data())
 		})
 	if err != nil {
 		return err
@@ -83,3 +76,43 @@ func (a *Analyze) Analyze() error {
 
 	return nil
 }
+
+func (a *Analyze) kmeans(features [][]float64) ([]int, error) {
+	return kmeans.Kmeans(features, a.cfg.Size(),
+		a.stats.Distance, a.cfg.MaxIterations())
+}
+
+type payload struct {
+	rows  int
+	cols  int
+	dense *mat.Dense
+}
+
+func newPayload(data [][]float64) *payload {
+	if len(data) == 0 {
+		return nil
+	}
+	r, c := len(data), len(data[0])
+	p := &payload{r, c, mat.NewDense(r, c, make([]float64, r*c, r*c))}
+	for i := range data {
+		p.dense.SetRow(i, data[i])
+	}
+	return p
+}
+
+func (p *payload) data() [][]float64 {
+	res := make([][]float64, p.rows, p.rows)
+	for i := range res {
+		row := make([]float64, p.cols, p.cols)
+		copy(row, p.dense.RawRowView(i))
+		res[i] = row
+	}
+	return res
+}
+
+func (p *payload) apply(f func(i, j int, v float64) float64) {
+	p.dense.Apply(f, p.dense)
+}
+
+func (p *payload) r() int { return p.rows }
+func (p *payload) c() int { return p.cols }

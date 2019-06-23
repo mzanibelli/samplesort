@@ -43,7 +43,7 @@ func New(executable string, configs ...config) *sampleSort {
 	return s
 }
 
-func (s *sampleSort) WriteTo(output io.Writer) error {
+func (s *sampleSort) WriteTo(output io.Writer) (int64, error) {
 	go s.parser.Parse(s.config.FileSystemRoot())
 	go func() {
 		for err := range s.extractor.Err() {
@@ -56,10 +56,10 @@ func (s *sampleSort) WriteTo(output io.Writer) error {
 		s.collection.Append(smp)
 	}
 	if err := s.analyze.Analyze(); err != nil {
-		return err
+		return 0, err
 	}
-	fmt.Fprintln(output, s.collection)
-	return nil
+	written, err := fmt.Fprintln(output, s.collection)
+	return int64(written), err
 }
 
 func which(bin, extension string) func(src string) (interface{}, error) {

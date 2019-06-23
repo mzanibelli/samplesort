@@ -41,35 +41,18 @@ func TestNormalize(t *testing.T) {
 		return
 	}
 	seed := 42
-	t.Run("input and output should have the same length",
-		func(t *testing.T) {
-			checkLength := func(g generator) bool {
-				data := getData(g, seed)
-				SUT := engine.New(mockConfig{})
-				actual := SUT.Normalize(data)
-				if len(data) != len(actual) {
-					t.Log("input:", len(data))
-					t.Log("output:", len(actual))
-					return false
-				}
-				return true
-			}
-			if err := quick.Check(checkLength, nil); err != nil {
-				t.Error("input and output are different")
-			}
-		})
 	t.Run("output values should always be between 0 and 1",
 		func(t *testing.T) {
-			t.Skip("TODO: the idea of normalizing between 0 and 1 is probably clumsy")
 			checkRange := func(g generator) bool {
 				data := getData(g, seed)
-				SUT := engine.New(mockConfig{})
-				actual := SUT.Normalize(data)
-				for i, row := range data {
-					for j := range row {
-						if actual[i][j] < 0 || actual[i][j] > 1 {
+				SUT := engine.New(mockConfig{}).Normalize(data)
+				for i := range data {
+					for j := range data[i] {
+						input := data[i][j]
+						output := SUT(i, j, input)
+						if output < 0 || output > 1 {
 							t.Log("input:", data[i][j])
-							t.Log("output:", actual[i][j])
+							t.Log("output:", output)
 							return false
 						}
 					}

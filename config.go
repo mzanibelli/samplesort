@@ -13,9 +13,9 @@ const (
 	defaultFileSystemRoot string  = ""
 	defaultAudioFormat    string  = ".wav"
 	defaultDataFormat     string  = ".json"
-	defaultSize           int     = 5
-	defaultMaxIterations  int     = 100
-	defaultMaxZScore      float64 = 0.5
+	defaultSize           int     = 1
+	defaultMaxIterations  int     = 1
+	defaultMaxZScore      float64 = 2
 	defaultEnableCache    bool    = true
 )
 

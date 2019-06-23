@@ -23,7 +23,7 @@ func main() {
 		samplesort.WithFileSystemRoot(os.Args[1]),
 		samplesort.WithLogger(logger),
 	)
-	if err := s.WriteTo(os.Stdout); err != nil {
+	if _, err := s.WriteTo(os.Stdout); err != nil {
 		logger.Fatal(err)
 	}
 }

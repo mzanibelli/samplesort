@@ -18,15 +18,17 @@ type Engine struct {
 }
 
 func New(cfg config) *Engine {
-	return &Engine{
-		cfg: cfg,
-	}
+	return &Engine{cfg: cfg}
 }
 
 func (e *Engine) Distance(sampleFeatures, meanOfCluster []float64) (float64, error) {
 	var res float64 = 0
-	for i := range e.stats {
-		res += math.Abs(sampleFeatures[i] - meanOfCluster[i])
+	for i := range sampleFeatures {
+		difference := math.Abs(sampleFeatures[i] - meanOfCluster[i])
+		threshold := e.stats[i].normalize(e.stats[i].std / 100)
+		if difference > threshold {
+			res += 1
+		}
 	}
 	return res, nil
 }
@@ -36,26 +38,22 @@ func (e *Engine) String() string {
 	return string(json)
 }
 
-func (e *Engine) Normalize(data [][]float64) [][]float64 {
+func (e *Engine) Normalize(data [][]float64) func(i, j int, v float64) float64 {
 	e.feed(data)
-	res := make([][]float64, len(data), len(data))
-	for i := range res {
-		row := make([]float64, len(e.stats), len(e.stats))
-		for j := range row {
-			row[j] = e.stats[j].normalize(data[i][j])
-		}
-		res[i] = row
+	return func(i, j int, v float64) float64 {
+		return e.stats[j].normalize(v)
 	}
-	return res
 }
 
 func (e *Engine) feed(data [][]float64) {
+	size := len(data)
+	if size == 0 {
+		return
+	}
+	e.stats = make(map[int]*featStat, len(data[0]))
 	for i, features := range data {
-		if i == 0 {
-			e.stats = make(map[int]*featStat, len(features))
-		}
 		for j, feat := range features {
-			e.update(i, j, len(data), feat)
+			e.update(i, j, size, feat)
 		}
 	}
 }
@@ -75,7 +73,6 @@ type featStat struct {
 	std    float64
 	min    float64
 	max    float64
-	warm   bool
 }
 
 func newFeatStat(size int) *featStat {
@@ -85,7 +82,6 @@ func newFeatStat(size int) *featStat {
 		std:    0,
 		min:    math.MaxFloat64,
 		max:    -math.MaxFloat64,
-		warm:   false,
 	}
 }
 
@@ -93,9 +89,10 @@ func (s *featStat) setMeanStd() {
 	s.mean, s.std = stat.MeanStdDev(s.values, s.weights())
 }
 
-func (s *featStat) setMinMax(zscore float64) {
+func (s *featStat) setMinMax(threshold float64) {
 	for _, v := range s.values {
-		if math.Abs(stat.StdScore(v, s.mean, s.std)) > zscore {
+		score := math.Abs(stat.StdScore(v, s.mean, s.std))
+		if score > threshold {
 			continue
 		}
 		s.min = math.Min(s.min, v)
@@ -103,18 +100,19 @@ func (s *featStat) setMinMax(zscore float64) {
 	}
 }
 
-// TODO: normalization is not working.
 func (s *featStat) normalize(n float64) float64 {
-	return n
-	// 	norm := (n - s.min) / (s.max - s.min)
-	// 	switch {
-	// 	case norm >= 1:
-	// 		return 1
-	// 	case norm <= 0:
-	// 		return 0
-	// 	default:
-	// 		return norm
-	// 	}
+	if s.max == s.min {
+		return 0
+	}
+	norm := (n - s.min) / (s.max - s.min)
+	switch {
+	case norm >= 1:
+		return 1
+	case norm <= 0:
+		return 0
+	default:
+		return norm
+	}
 }
 
 func (s *featStat) quantile(n float64) float64 {
