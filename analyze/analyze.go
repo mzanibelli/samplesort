@@ -2,6 +2,7 @@ package analyze
 
 import (
 	"github.com/bugra/kmeans"
+	"gonum.org/v1/gonum/mat"
 )
 
 type dataset interface {
@@ -54,9 +55,14 @@ func (a *Analyze) Analyze() error {
 	if err != nil {
 		return err
 	}
-
 	if len(rawFeatures) == 0 {
 		return nil
+	}
+
+	r, c := len(rawFeatures), len(rawFeatures[0])
+	d := mat.NewDense(r, c, make([]float64, r*c, r*c))
+	for i := range rawFeatures {
+		d.SetRow(i, rawFeatures[i])
 	}
 
 	a.cfg.Log("normalizing features...")
