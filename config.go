@@ -1,16 +1,21 @@
 package samplesort
 
 import (
+	"fmt"
 	"log"
+	"strings"
 )
 
+// TODO: default size makes the test fail.
+// Is it because of RNG and the fact that KMeans is not a deterministic
+// algorithm?
 const (
 	defaultFileSystemRoot string  = ""
 	defaultAudioFormat    string  = ".wav"
 	defaultDataFormat     string  = ".json"
 	defaultSize           int     = 5
-	defaultMaxIterations  int     = 0
-	defaultMaxZScore      float64 = 2
+	defaultMaxIterations  int     = 100
+	defaultMaxZScore      float64 = 0.5
 	defaultEnableCache    bool    = true
 )
 
@@ -50,6 +55,32 @@ func newConfig(configs ...config) *parameters {
 		setConfigTo(params)
 	}
 	return params
+}
+
+func (p *parameters) String() string {
+	b := new(strings.Builder)
+	b.WriteString(fmt.Sprintf(
+		"data: %s\n", p.fileSystemRoot,
+	))
+	b.WriteString(fmt.Sprintf(
+		"input: %s\n", p.audioFormat,
+	))
+	b.WriteString(fmt.Sprintf(
+		"output: %s\n", p.dataFormat,
+	))
+	b.WriteString(fmt.Sprintf(
+		"size: %d\n", p.size,
+	))
+	b.WriteString(fmt.Sprintf(
+		"threshold: %d\n", p.maxIterations,
+	))
+	b.WriteString(fmt.Sprintf(
+		"zscore: %.2f\n", p.maxZScore,
+	))
+	b.WriteString(fmt.Sprintf(
+		"cache: %t\n", p.enableCache,
+	))
+	return b.String()
 }
 
 func WithFileSystemRoot(value string) config {

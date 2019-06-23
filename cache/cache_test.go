@@ -85,7 +85,7 @@ func TestCache(t *testing.T) {
 		})
 	t.Run("it should not write data if there was an error during encoding",
 		func(t *testing.T) {
-			t.Skip("need to make mockData produce invalid json")
+			t.Skip("TODO: make mock produce invalid json")
 		})
 	t.Run("it should return an error if we couldn't read the cached data",
 		func(t *testing.T) {

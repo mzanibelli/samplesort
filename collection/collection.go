@@ -65,19 +65,6 @@ func (c *Collection) Features() [][]float64 {
 	return res
 }
 
-func (c *Collection) Len() int {
-	return len(c.entities)
-}
-
-func (c *Collection) Swap(i, j int) {
-	c.entities[i], c.entities[j] = c.entities[j], c.entities[i]
-	c.centers[i], c.centers[j] = c.centers[j], c.centers[i]
-}
-
-func (c *Collection) Less(i, j int) bool {
-	return c.centers[i] < c.centers[j]
-}
-
 func (c *Collection) Sort(centers []int) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -95,4 +82,17 @@ func (c *Collection) String() string {
 		b.WriteString(e.String())
 	}
 	return b.String()
+}
+
+func (c *Collection) Len() int {
+	return len(c.entities)
+}
+
+func (c *Collection) Swap(i, j int) {
+	c.entities[i], c.entities[j] = c.entities[j], c.entities[i]
+	c.centers[i], c.centers[j] = c.centers[j], c.centers[i]
+}
+
+func (c *Collection) Less(i, j int) bool {
+	return c.centers[i] < c.centers[j]
 }

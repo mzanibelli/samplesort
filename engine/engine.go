@@ -103,17 +103,18 @@ func (s *featStat) setMinMax(zscore float64) {
 	}
 }
 
+// TODO: normalization is not working.
 func (s *featStat) normalize(n float64) float64 {
 	return n
-	norm := (n - s.min) / (s.max - s.min)
-	switch {
-	case norm >= 1:
-		return 1
-	case norm <= 0:
-		return 0
-	default:
-		return norm
-	}
+	// 	norm := (n - s.min) / (s.max - s.min)
+	// 	switch {
+	// 	case norm >= 1:
+	// 		return 1
+	// 	case norm <= 0:
+	// 		return 0
+	// 	default:
+	// 		return norm
+	// 	}
 }
 
 func (s *featStat) quantile(n float64) float64 {
