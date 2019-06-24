@@ -50,6 +50,14 @@ func TestCollection(t *testing.T) {
 				t.Errorf("expected: %v, actual: %v", expected, actual)
 			}
 		})
+	t.Run("it should not fail on empty input",
+		func(t *testing.T) {
+			SUT := collection.New()
+			actual := SUT.Features()
+			if actual != nil {
+				t.Errorf("expected nil, got: %v", actual)
+			}
+		})
 }
 
 func makeSUT() *collection.Collection {

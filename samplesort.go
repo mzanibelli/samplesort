@@ -58,8 +58,11 @@ func (s *sampleSort) WriteTo(output io.Writer) (int64, error) {
 	if err := s.analyze.Analyze(); err != nil {
 		return 0, err
 	}
-	written, err := fmt.Fprintln(output, s.collection)
-	return int64(written), err
+	if s.collection.Len() > 0 {
+		written, err := fmt.Fprintln(output, s.collection)
+		return int64(written), err
+	}
+	return 0, nil
 }
 
 func which(bin, extension string) func(src string) (interface{}, error) {

@@ -36,6 +36,9 @@ func (c *Collection) Append(e entity) {
 }
 
 func (c *Collection) Features() [][]float64 {
+	if len(c.entities) == 0 {
+		return nil
+	}
 	c.computeScores()
 	data := make([][]float64, len(c.entities), len(c.entities))
 	for i := range data {

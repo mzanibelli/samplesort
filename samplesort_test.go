@@ -10,6 +10,42 @@ import (
 	"unicode/utf8"
 )
 
+func TestMissingDirectoryShouldProduceError(t *testing.T) {
+	root := "./testdata/missing"
+	output := bytes.NewBuffer([]byte{})
+	n, err := samplesort.New(
+		"./bin/streaming_extractor_music",
+		samplesort.WithFileSystemRoot(root),
+		samplesort.WithoutCache(),
+	).WriteTo(output)
+	if err == nil {
+		t.Error("expected error")
+	}
+	expected := int64(0)
+	actual := n
+	if expected != actual {
+		t.Errorf("expected:%d, actual:%d", expected, actual)
+	}
+}
+
+func TestEmptyDirectoryShouldDoNothing(t *testing.T) {
+	root := "./testdata/empty"
+	output := bytes.NewBuffer([]byte{})
+	n, err := samplesort.New(
+		"./bin/streaming_extractor_music",
+		samplesort.WithFileSystemRoot(root),
+		samplesort.WithoutCache(),
+	).WriteTo(output)
+	if err != nil {
+		t.Error(err)
+	}
+	expected := int64(0)
+	actual := n
+	if expected != actual {
+		t.Errorf("expected:%d, actual:%d", expected, actual)
+	}
+}
+
 func TestOutputWithSingleSample(t *testing.T) {
 	if testing.Short() {
 		return
