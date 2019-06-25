@@ -3,8 +3,8 @@ package engine
 import (
 	"encoding/json"
 	"math"
-	"sort"
 
+	"github.com/bugra/kmeans"
 	"gonum.org/v1/gonum/stat"
 )
 
@@ -22,15 +22,7 @@ func New(cfg config) *Engine {
 }
 
 func (e *Engine) Distance(sampleFeatures, meanOfCluster []float64) (float64, error) {
-	var res float64 = 0
-	for i := range sampleFeatures {
-		difference := math.Abs(sampleFeatures[i] - meanOfCluster[i])
-		threshold := e.stats[i].std / 2
-		if difference > threshold {
-			res += 1
-		}
-	}
-	return res, nil
+	return kmeans.HammingDistance(sampleFeatures, meanOfCluster)
 }
 
 func (e *Engine) String() string {
@@ -38,11 +30,17 @@ func (e *Engine) String() string {
 	return string(json)
 }
 
-// TODO: make quantile configurable.
 func (e *Engine) Normalize(data [][]float64) func(i, j int, v float64) float64 {
 	e.feed(data)
 	return func(i, j int, v float64) float64 {
-		return math.Min(e.stats[j].quantile(0.75), v)
+		switch {
+		case e.stats[j].min < 0:
+			return math.Max(0, v+e.stats[j].min)
+		case e.stats[j].min > 0:
+			return math.Max(0, v-e.stats[j].min)
+		default:
+			return math.Max(0, v)
+		}
 	}
 }
 
@@ -99,13 +97,6 @@ func (s *featStat) setMinMax(threshold float64) {
 		s.min = math.Min(s.min, v)
 		s.max = math.Max(s.max, v)
 	}
-}
-
-func (s *featStat) quantile(n float64) float64 {
-	tmp := make([]float64, len(s.values))
-	copy(tmp, s.values)
-	sort.Float64s(tmp)
-	return stat.Quantile(n, stat.Empirical, tmp, s.weights())
 }
 
 // TODO: how to smartly weight features?

@@ -42,16 +42,16 @@ func TestNormalize(t *testing.T) {
 	if testing.Short() {
 		return
 	}
-	t.Run("output values should always be lower or equal than input values",
+	t.Run("output values should always be positive",
 		func(t *testing.T) {
-			checkRange := func(g generator) bool {
+			checkSign := func(g generator) bool {
 				data := getData(g, seed)
 				SUT := engine.New(mockConfig{}).Normalize(data)
 				for i := range data {
 					for j := range data[i] {
 						input := data[i][j]
 						output := SUT(i, j, input)
-						if output > input {
+						if output < 0 {
 							t.Log("input:", input)
 							t.Log("output:", output)
 							return false
@@ -60,7 +60,7 @@ func TestNormalize(t *testing.T) {
 				}
 				return true
 			}
-			if err := quick.Check(checkRange, nil); err != nil {
+			if err := quick.Check(checkSign, nil); err != nil {
 				t.Error(err)
 			}
 		})

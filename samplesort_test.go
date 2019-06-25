@@ -77,10 +77,15 @@ func TestSameSamplesShouldBeSideBySide(t *testing.T) {
 		samplesort.WithSize(4),
 		samplesort.WithoutCache(),
 	).WriteTo(output)
-	expected := "xxx" // 3 similar files with name starting with 'x'
-	actual := baseline(output)
-	if !strings.Contains(actual, expected) {
-		t.Errorf("%q does not contain %q", actual, expected)
+	b := baseline(output)
+	// Two 'x's and a 'z' are duplicates: guard against alphabetical
+	// sorting induced luck.
+	expected := true
+	actual := strings.Contains(b, "xxz") ||
+		strings.Contains(b, "xzx") ||
+		strings.Contains(b, "zxx")
+	if expected != actual {
+		t.Errorf("duplicates are not side by side: %s", b)
 	}
 }
 
