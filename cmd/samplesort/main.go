@@ -34,7 +34,7 @@ func check(path string) error {
 	switch {
 	case err != nil:
 		return fmt.Errorf("Error opening executable: %v", err)
-	case sha256Verify(fd, samplesort.Checksum):
+	case !sha256Verify(fd, samplesort.Checksum):
 		return fmt.Errorf("SHA256 mismatch, expected version %q", samplesort.Version)
 	case len(os.Args) != 2:
 		return fmt.Errorf("Expected exactly one argument, got: %d", len(os.Args)-1)
