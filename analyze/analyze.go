@@ -118,3 +118,8 @@ func (p *payload) apply(f func(i, j int, v float64) float64) {
 
 func (p *payload) r() int { return p.rows }
 func (p *payload) c() int { return p.cols }
+
+func (p *payload) String() string {
+	return fmt.Sprintf("%v\n",
+		mat.Formatted(p.dense, mat.Prefix(""), mat.Squeeze()))
+}
