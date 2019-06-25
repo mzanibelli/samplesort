@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"sync"
 )
 
 type entity interface {
@@ -17,7 +16,6 @@ type Collection struct {
 	entities []entity
 	centers  []int
 	scores   map[string]*featScore
-	mu       *sync.Mutex
 }
 
 func New() *Collection {
@@ -25,13 +23,10 @@ func New() *Collection {
 		entities: make([]entity, 0),
 		scores:   nil,
 		centers:  nil,
-		mu:       new(sync.Mutex),
 	}
 }
 
 func (c *Collection) Append(e entity) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 	c.entities = append(c.entities, e)
 }
 
@@ -48,8 +43,6 @@ func (c *Collection) Features() [][]float64 {
 }
 
 func (c *Collection) Sort(centers []int) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 	if len(c.entities) != len(centers) {
 		panic(fmt.Sprintf("dataset and analysis size mismatch: %d / %d",
 			len(c.entities), len(centers)))
