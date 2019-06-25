@@ -56,27 +56,13 @@ func newConfig(options ...option) *config {
 
 func (p *config) String() string {
 	b := new(strings.Builder)
-	b.WriteString(fmt.Sprintf(
-		"data: %s\n", p.fileSystemRoot,
-	))
-	b.WriteString(fmt.Sprintf(
-		"input: %s\n", p.audioFormat,
-	))
-	b.WriteString(fmt.Sprintf(
-		"output: %s\n", p.dataFormat,
-	))
-	b.WriteString(fmt.Sprintf(
-		"size: %d\n", p.size,
-	))
-	b.WriteString(fmt.Sprintf(
-		"threshold: %d\n", p.maxIterations,
-	))
-	b.WriteString(fmt.Sprintf(
-		"zscore: %.2f\n", p.maxZScore,
-	))
-	b.WriteString(fmt.Sprintf(
-		"cache: %t\n", p.enableCache,
-	))
+	b.WriteString(fmt.Sprintf("data: %s\n", p.fileSystemRoot))
+	b.WriteString(fmt.Sprintf("input: %s\n", p.audioFormat))
+	b.WriteString(fmt.Sprintf("output: %s\n", p.dataFormat))
+	b.WriteString(fmt.Sprintf("size: %d\n", p.size))
+	b.WriteString(fmt.Sprintf("threshold: %d\n", p.maxIterations))
+	b.WriteString(fmt.Sprintf("zscore: %.2f\n", p.maxZScore))
+	b.WriteString(fmt.Sprintf("cache: %t\n", p.enableCache))
 	return b.String()
 }
 

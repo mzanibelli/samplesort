@@ -46,6 +46,32 @@ func TestEmptyDirectoryShouldDoNothing(t *testing.T) {
 	}
 }
 
+func TestConfigIsCorrectlyApplied(t *testing.T) {
+	output := bytes.NewBuffer([]byte{})
+	samplesort.New(
+		"./bin/streaming_extractor_music",
+		samplesort.WithFileSystemRoot("foo"),
+		samplesort.WithAudioFormat("bar"),
+		samplesort.WithDataFormat("baz"),
+		samplesort.WithSize(1337),
+		samplesort.WithMaxIterations(42),
+		samplesort.WithMaxZScore(777),
+		samplesort.WithoutCache(),
+	).DumpConfig(output)
+	expected, actual := formatForAssertion(output,
+		"data: foo",
+		"input: bar",
+		"output: baz",
+		"size: 1337",
+		"threshold: 42",
+		"zscore: 777.00",
+		"cache: false",
+	)
+	if expected != actual {
+		t.Errorf("\n-> expected:\n%s\n-> actual:\n%s", expected, actual)
+	}
+}
+
 func TestOutputWithSingleSample(t *testing.T) {
 	if testing.Short() {
 		return
@@ -57,10 +83,9 @@ func TestOutputWithSingleSample(t *testing.T) {
 		samplesort.WithFileSystemRoot(root),
 		samplesort.WithoutCache(),
 	).WriteTo(output)
-	expected := strings.Join([]string{
+	expected, actual := formatForAssertion(output,
 		filepath.Join(root, "sample.wav"),
-	}, "\n")
-	actual := strings.Trim(output.String(), "\n")
+	)
 	if expected != actual {
 		t.Errorf("\n-> expected:\n%s\n-> actual:\n%s", expected, actual)
 	}
@@ -89,12 +114,8 @@ func TestSameSamplesShouldBeSideBySide(t *testing.T) {
 	}
 }
 
-// input:
-// /tmp/a.wav
-// /tmp/b.wav
-// /tmp/c.wav
-// output:
-// abc
+// The first letter for each file name of a given directory allows quick
+// comparison of the order.
 func baseline(s fmt.Stringer) string {
 	res := new(strings.Builder)
 	parts := strings.Split(s.String(), "\n")
@@ -107,4 +128,10 @@ func baseline(s fmt.Stringer) string {
 		res.WriteRune(r)
 	}
 	return res.String()
+}
+
+func formatForAssertion(s fmt.Stringer, lines ...string) (expected, actual string) {
+	actual = strings.Trim(s.String(), "\n")
+	expected = strings.Join(lines, "\n")
+	return expected, actual
 }

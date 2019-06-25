@@ -65,6 +65,11 @@ func (s *sampleSort) WriteTo(output io.Writer) (int64, error) {
 	return 0, nil
 }
 
+func (s *sampleSort) DumpConfig(output io.Writer) (int64, error) {
+	n, err := fmt.Fprintln(output, s.config)
+	return int64(n), err // bloody hell
+}
+
 func which(bin, extension string) func(src string) (interface{}, error) {
 	return func(src string) (interface{}, error) {
 		return nil, exec.Command(bin, src, src+extension).Run()
