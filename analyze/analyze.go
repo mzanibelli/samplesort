@@ -1,6 +1,8 @@
 package analyze
 
 import (
+	"fmt"
+
 	"github.com/bugra/kmeans"
 	"gonum.org/v1/gonum/mat"
 )
