@@ -29,8 +29,8 @@ func (e *Engine) Distance(sampleFeatures, meanOfCluster []float64) (float64, err
 }
 
 func (e *Engine) String() string {
-	json, _ := json.MarshalIndent(e.stats, "", " ")
-	return string(json)
+	str, _ := json.MarshalIndent(e.stats, "", " ")
+	return string(str)
 }
 
 // See: https://en.wikipedia.org/wiki/Feature_scaling
