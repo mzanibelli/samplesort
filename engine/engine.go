@@ -41,7 +41,7 @@ func (e *Engine) String() string {
 func (e *Engine) Normalize(data [][]float64) func(i, j int, v float64) float64 {
 	e.feed(data)
 	return func(i, j int, v float64) float64 {
-		return (v - e.stats[j].mean) / e.stats[j].std
+		return round((v-e.stats[j].mean)/e.stats[j].std, 0.0005)
 	}
 }
 
