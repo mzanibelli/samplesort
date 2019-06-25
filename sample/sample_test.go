@@ -41,12 +41,14 @@ func TestSample(t *testing.T) {
 	t.Run("it should sort features by key",
 		func(t *testing.T) {
 			input := map[string]interface{}{
+				"zzz": 4.,
 				"foo": map[string]interface{}{
-					"zzz": 0.001,
-					"aaa": 0.05641,
+					"bbb": 2.,
+					"zzz": 3.,
+					"aaa": 1.,
 				},
 			}
-			expected := []float64{0.05641, 0.001}
+			expected := []float64{1, 2, 3, 4}
 			SUT := sample.New("")
 			SUT.Flatten(input)
 			actual := SUT.Values()
