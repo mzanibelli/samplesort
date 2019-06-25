@@ -2,6 +2,7 @@ package collection
 
 import (
 	"fmt"
+	"log"
 	"sort"
 	"strings"
 )
@@ -83,7 +84,7 @@ type featScore struct {
 
 func (c *Collection) computeScores() {
 	defer c.filterByCount()
-	c.scores = make(map[string]*featScore, len(c.entities[0].Keys()))
+	c.scores = make(map[string]*featScore)
 	for i, e := range c.entities {
 		for j, key := range e.Keys() {
 			c.updateScore(key, i, j)
@@ -112,6 +113,9 @@ func (c *Collection) orderedValues(i int) []float64 {
 	values := c.entities[i].Values()
 	for j := range c.scores {
 		res = append(res, values[c.scores[j].indices[i]])
+	}
+	if i == 0 && len(c.scores) > 0 {
+		log.Println(res[0])
 	}
 	return res
 }

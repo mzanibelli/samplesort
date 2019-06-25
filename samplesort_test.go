@@ -2,9 +2,14 @@ package samplesort_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path/filepath"
+	"reflect"
 	"samplesort"
+	"sort"
 	"strings"
 	"testing"
 	"unicode/utf8"
@@ -114,6 +119,50 @@ func TestSameSamplesShouldBeSideBySide(t *testing.T) {
 	}
 }
 
+func TestFeaturesShouldBeTheRawSortedData(t *testing.T) {
+	root := "./testdata/consistency"
+	output := bytes.NewBuffer([]byte{})
+	samplesort.New(
+		"./bin/streaming_extractor_music",
+		samplesort.WithFileSystemRoot(root),
+		samplesort.WithoutCache(),
+	).WriteTo(output)
+	flat := make(map[string]float64)
+	fromJSON("./testdata/consistency/flat.json", &flat)
+	expected := sortByKey(flat)
+	actual := make([][]float64, 0)
+	fromJSON(filepath.Join(root, "features.json"), &actual)
+	if !reflect.DeepEqual(expected, actual) {
+		for i := range expected {
+			for j := range expected[i] {
+				if expected[i][j] == actual[i][j] {
+					continue
+				}
+				t.Log("at:", i, j)
+				t.Log("expected:", expected[i][j])
+				t.Log("actual:", actual[i][j])
+				break
+			}
+		}
+		t.Error("features and raw data are different")
+	}
+}
+
+func sortByKey(input map[string]float64) [][]float64 {
+	keys := make([]string, 0, len(input))
+	for key := range input {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	features := make([]float64, len(keys), len(keys))
+	for i, key := range keys {
+		features[i] = input[key]
+	}
+	res := make([][]float64, 1, 1)
+	res[0] = features
+	return res
+}
+
 func TestTheResultsAreConsistentWithHumanEar(t *testing.T) {
 	t.Skip("TODO: establish well known comparisons between two similar and one very dissimilar sample")
 }
@@ -134,8 +183,23 @@ func baseline(s fmt.Stringer) string {
 	return res.String()
 }
 
-func formatForAssertion(s fmt.Stringer, lines ...string) (expected, actual string) {
-	actual = strings.Trim(s.String(), "\n")
+func formatForAssertion(console fmt.Stringer, lines ...string) (expected, actual string) {
+	actual = strings.Trim(console.String(), "\n")
 	expected = strings.Join(lines, "\n")
 	return expected, actual
+}
+
+func fromJSON(path string, target interface{}) {
+	fd, err := os.Open(path)
+	must(err)
+	defer fd.Close()
+	content, err := ioutil.ReadAll(fd)
+	must(err)
+	must(json.Unmarshal(content, target))
+}
+
+func must(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
