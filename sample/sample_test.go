@@ -56,4 +56,22 @@ func TestSample(t *testing.T) {
 				t.Errorf("expected: %v, actual: %v", expected, actual)
 			}
 		})
+	t.Run("it should return sorted keys on demand",
+		func(t *testing.T) {
+			input := map[string]interface{}{
+				"zzz": 4.,
+				"foo": map[string]interface{}{
+					"bbb": 2.,
+					"zzz": 3.,
+					"aaa": 1.,
+				},
+			}
+			expected := []string{"foo.aaa", "foo.bbb", "foo.zzz", "zzz"}
+			SUT := sample.New("")
+			SUT.Flatten(input)
+			actual := SUT.Keys()
+			if !reflect.DeepEqual(expected, actual) {
+				t.Errorf("expected: %v, actual: %v", expected, actual)
+			}
+		})
 }
