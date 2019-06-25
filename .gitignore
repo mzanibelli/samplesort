@@ -1,5 +1,5 @@
 /bin/*
-/testdata/*
+/testdata/**/*.json
 !/bin/streaming_extractor_music
 /data/*
 /*.json
