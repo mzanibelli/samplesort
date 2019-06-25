@@ -114,6 +114,10 @@ func TestSameSamplesShouldBeSideBySide(t *testing.T) {
 	}
 }
 
+func TestTheResultsAreConsistentWithHumanEar(t *testing.T) {
+	t.Skip("TODO: establish well known comparisons between two similar and one very dissimilar sample")
+}
+
 // The first letter for each file name of a given directory allows quick
 // comparison of the order.
 func baseline(s fmt.Stringer) string {

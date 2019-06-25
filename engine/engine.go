@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"math"
 
-	"github.com/bugra/kmeans"
 	"gonum.org/v1/gonum/stat"
 )
 
@@ -22,7 +21,11 @@ func New(cfg config) *Engine {
 }
 
 func (e *Engine) Distance(sampleFeatures, meanOfCluster []float64) (float64, error) {
-	return kmeans.HammingDistance(sampleFeatures, meanOfCluster)
+	var res float64 = 0
+	for i := range sampleFeatures {
+		res += math.Abs(sampleFeatures[i] - meanOfCluster[i])
+	}
+	return res / float64(len(sampleFeatures)), nil
 }
 
 func (e *Engine) String() string {
@@ -30,17 +33,15 @@ func (e *Engine) String() string {
 	return string(json)
 }
 
+// See: https://en.wikipedia.org/wiki/Feature_scaling
+// The general method of calculation is to determine the distribution
+// mean and standard deviation for each feature. Next we subtract the
+// mean from each feature. Then we divide the values (mean is already
+// subtracted) of each feature by its standard deviation.
 func (e *Engine) Normalize(data [][]float64) func(i, j int, v float64) float64 {
 	e.feed(data)
 	return func(i, j int, v float64) float64 {
-		switch {
-		case e.stats[j].min < 0:
-			return math.Max(0, v+e.stats[j].min)
-		case e.stats[j].min > 0:
-			return math.Max(0, v-e.stats[j].min)
-		default:
-			return math.Max(0, v)
-		}
+		return (v - e.stats[j].mean) / e.stats[j].std
 	}
 }
 
@@ -90,10 +91,6 @@ func (s *featStat) setMeanStd() {
 
 func (s *featStat) setMinMax(threshold float64) {
 	for _, v := range s.values {
-		score := math.Abs(stat.StdScore(v, s.mean, s.std))
-		if score > threshold {
-			continue
-		}
 		s.min = math.Min(s.min, v)
 		s.max = math.Max(s.max, v)
 	}
