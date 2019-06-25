@@ -6,9 +6,6 @@ import (
 	"strings"
 )
 
-// TODO: default size makes the test fail.
-// Is it because of RNG and the fact that KMeans is not a deterministic
-// algorithm?
 const (
 	defaultFileSystemRoot string  = ""
 	defaultAudioFormat    string  = ".wav"
@@ -19,7 +16,7 @@ const (
 	defaultEnableCache    bool    = true
 )
 
-type parameters struct {
+type config struct {
 	fileSystemRoot string
 	audioFormat    string
 	dataFormat     string
@@ -30,18 +27,18 @@ type parameters struct {
 	logger         *log.Logger
 }
 
-func (p *parameters) FileSystemRoot() string { return p.fileSystemRoot }
-func (p *parameters) AudioFormat() string    { return p.audioFormat }
-func (p *parameters) DataFormat() string     { return p.dataFormat }
-func (p *parameters) Size() int              { return p.size }
-func (p *parameters) MaxIterations() int     { return p.maxIterations }
-func (p *parameters) MaxZScore() float64     { return p.maxZScore }
-func (p *parameters) EnableCache() bool      { return p.enableCache }
+func (p *config) FileSystemRoot() string { return p.fileSystemRoot }
+func (p *config) AudioFormat() string    { return p.audioFormat }
+func (p *config) DataFormat() string     { return p.dataFormat }
+func (p *config) Size() int              { return p.size }
+func (p *config) MaxIterations() int     { return p.maxIterations }
+func (p *config) MaxZScore() float64     { return p.maxZScore }
+func (p *config) EnableCache() bool      { return p.enableCache }
 
-type config func(p *parameters) error
+type option func(p *config) error
 
-func newConfig(configs ...config) *parameters {
-	params := &parameters{
+func newConfig(options ...option) *config {
+	params := &config{
 		fileSystemRoot: defaultFileSystemRoot,
 		audioFormat:    defaultAudioFormat,
 		dataFormat:     defaultDataFormat,
@@ -51,13 +48,13 @@ func newConfig(configs ...config) *parameters {
 		enableCache:    defaultEnableCache,
 		logger:         nil,
 	}
-	for _, setConfigTo := range configs {
-		setConfigTo(params)
+	for _, applyOption := range options {
+		applyOption(params)
 	}
 	return params
 }
 
-func (p *parameters) String() string {
+func (p *config) String() string {
 	b := new(strings.Builder)
 	b.WriteString(fmt.Sprintf(
 		"data: %s\n", p.fileSystemRoot,
@@ -83,63 +80,63 @@ func (p *parameters) String() string {
 	return b.String()
 }
 
-func WithFileSystemRoot(value string) config {
-	return func(p *parameters) error {
+func WithFileSystemRoot(value string) option {
+	return func(p *config) error {
 		p.fileSystemRoot = value
 		return nil
 	}
 }
 
-func WithAudioFormat(value string) config {
-	return func(p *parameters) error {
+func WithAudioFormat(value string) option {
+	return func(p *config) error {
 		p.audioFormat = value
 		return nil
 	}
 }
 
-func WithDataFormat(value string) config {
-	return func(p *parameters) error {
+func WithDataFormat(value string) option {
+	return func(p *config) error {
 		p.dataFormat = value
 		return nil
 	}
 }
 
-func WithSize(value int) config {
-	return func(p *parameters) error {
+func WithSize(value int) option {
+	return func(p *config) error {
 		p.size = value
 		return nil
 	}
 }
 
-func WithMaxIterations(value int) config {
-	return func(p *parameters) error {
+func WithMaxIterations(value int) option {
+	return func(p *config) error {
 		p.maxIterations = value
 		return nil
 	}
 }
 
-func WithMaxZScore(value float64) config {
-	return func(p *parameters) error {
+func WithMaxZScore(value float64) option {
+	return func(p *config) error {
 		p.maxZScore = value
 		return nil
 	}
 }
 
-func WithoutCache() config {
-	return func(p *parameters) error {
+func WithoutCache() option {
+	return func(p *config) error {
 		p.enableCache = false
 		return nil
 	}
 }
 
-func WithLogger(value *log.Logger) config {
-	return func(p *parameters) error {
+func WithLogger(value *log.Logger) option {
+	return func(p *config) error {
 		p.logger = value
 		return nil
 	}
 }
 
-func (p *parameters) Log(vs ...interface{}) {
+func (p *config) Log(vs ...interface{}) {
 	if p.logger == nil {
 		return
 	}

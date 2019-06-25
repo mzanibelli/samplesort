@@ -77,6 +77,8 @@ func (a *Analyze) Analyze() error {
 	return nil
 }
 
+// TODO: kmeans is not a deterministic algorithm so it shouldn't be
+// unit-tested.
 func (a *Analyze) kmeans(features [][]float64) ([]int, error) {
 	return kmeans.Kmeans(features, a.cfg.Size(),
 		a.stats.Distance, a.cfg.MaxIterations())

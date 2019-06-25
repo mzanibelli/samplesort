@@ -26,12 +26,12 @@ type sampleSort struct {
 	collection *collection.Collection
 	engine     *engine.Engine
 	analyze    *analyze.Analyze
-	config     *parameters
+	config     *config
 }
 
-func New(executable string, configs ...config) *sampleSort {
+func New(executable string, options ...option) *sampleSort {
 	s := &sampleSort{
-		config:     newConfig(configs...),
+		config:     newConfig(options...),
 		collection: collection.New(),
 	}
 	bin := which(executable, s.config.DataFormat())
