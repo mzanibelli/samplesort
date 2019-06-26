@@ -1,12 +1,57 @@
 package engine_test
 
 import (
+	"math"
 	"math/rand"
 	"reflect"
 	"samplesort/engine"
 	"testing"
 	"testing/quick"
 )
+
+func TestNormalizeShouldNeverReturnNaN(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+	checkNaN := func(g generator) bool {
+		data := getData(g, seed)
+		SUT := engine.New().Normalize(data)
+		for i := range data {
+			for j := range data[i] {
+				if math.IsNaN(SUT(i, j, data[i][j])) {
+					t.Log("input:", data[i][j])
+					return false
+				}
+			}
+		}
+		return true
+	}
+	if err := quick.Check(checkNaN, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestDistanceWithItselfShouldBeZero(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+	checkRange := func(g generator) bool {
+		data := getData(g, seed)
+		SUT := engine.New()
+		SUT.Normalize(data)
+		for i := range data {
+			input := data[i]
+			if v, _ := SUT.Distance(input, input); v != 0 {
+				t.Log("input:", data[i])
+				return false
+			}
+		}
+		return true
+	}
+	if err := quick.Check(checkRange, nil); err != nil {
+		t.Error(err)
+	}
+}
 
 var seed int64 = 42
 
@@ -36,47 +81,4 @@ func getData(g generator, seed int64) [][]float64 {
 		panic("type assertion failed")
 	}
 	return [][]float64(data)
-}
-
-func TestNormalize(t *testing.T) {
-	if testing.Short() {
-		return
-	}
-	t.Run("normalized values should be...?",
-		func(t *testing.T) {
-			t.Skip("normalization still not decided")
-			checkSign := func(g generator) bool {
-				data := getData(g, seed)
-				engine.New().Normalize(data)
-				return true
-			}
-			if err := quick.Check(checkSign, nil); err != nil {
-				t.Error(err)
-			}
-		})
-}
-
-func TestDistance(t *testing.T) {
-	if testing.Short() {
-		return
-	}
-	t.Run("distance between same slices should be 0",
-		func(t *testing.T) {
-			checkRange := func(g generator) bool {
-				data := getData(g, seed)
-				SUT := engine.New()
-				SUT.Normalize(data)
-				for i := range data {
-					input := data[i]
-					if v, _ := SUT.Distance(input, input); v != 0 {
-						t.Log("input:", data[i])
-						return false
-					}
-				}
-				return true
-			}
-			if err := quick.Check(checkRange, nil); err != nil {
-				t.Error(err)
-			}
-		})
 }
