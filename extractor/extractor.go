@@ -2,12 +2,6 @@ package extractor
 
 import "fmt"
 
-type cache interface {
-	Fetch(key string, target interface{}, build func() (interface{}, error)) error
-}
-
-type buildFunc func(src string) (interface{}, error)
-
 type Extractor struct {
 	cache  cache
 	build  buildFunc

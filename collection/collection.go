@@ -6,12 +6,6 @@ import (
 	"strings"
 )
 
-type entity interface {
-	fmt.Stringer
-	Keys() []string
-	Values() []float64
-}
-
 type Collection struct {
 	entities []entity
 	centers  []int
