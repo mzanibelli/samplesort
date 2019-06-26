@@ -96,29 +96,6 @@ func TestOutputWithSingleSample(t *testing.T) {
 	}
 }
 
-func TestSameSamplesShouldBeSideBySide(t *testing.T) {
-	if testing.Short() {
-		return
-	}
-	output := bytes.NewBuffer([]byte{})
-	samplesort.New(
-		"./bin/streaming_extractor_music",
-		samplesort.WithFileSystemRoot("./testdata/duplicates"),
-		samplesort.WithSize(4),
-		samplesort.WithoutCache(),
-	).WriteTo(output)
-	b := baseline(output)
-	// Two 'x's and a 'z' are duplicates: guard against alphabetical
-	// sorting induced luck.
-	expected := true
-	actual := strings.Contains(b, "xxz") ||
-		strings.Contains(b, "xzx") ||
-		strings.Contains(b, "zxx")
-	if expected != actual {
-		t.Errorf("duplicates are not side by side: %s", b)
-	}
-}
-
 func TestFeaturesShouldBeTheRawSortedData(t *testing.T) {
 	root := "./testdata/consistency"
 	output := bytes.NewBuffer([]byte{})
@@ -145,6 +122,29 @@ func TestFeaturesShouldBeTheRawSortedData(t *testing.T) {
 			}
 		}
 		t.Error("features and raw data are different")
+	}
+}
+
+func TestSameSamplesShouldBeSideBySide(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+	output := bytes.NewBuffer([]byte{})
+	samplesort.New(
+		"./bin/streaming_extractor_music",
+		samplesort.WithFileSystemRoot("./testdata/duplicates"),
+		samplesort.WithSize(4),
+		samplesort.WithoutCache(),
+	).WriteTo(output)
+	b := baseline(output)
+	// Two 'x's and a 'z' are duplicates: guard against alphabetical
+	// sorting induced luck.
+	expected := true
+	actual := strings.Contains(b, "xxz") ||
+		strings.Contains(b, "xzx") ||
+		strings.Contains(b, "zxx")
+	if expected != actual {
+		t.Errorf("duplicates are not side by side: %s", b)
 	}
 }
 

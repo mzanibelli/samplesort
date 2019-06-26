@@ -18,9 +18,13 @@ func New() *Engine {
 func (e *Engine) Distance(sampleFeatures, meanOfCluster []float64) (float64, error) {
 	var res float64 = 0
 	for i := range sampleFeatures {
+		if math.IsNaN(sampleFeatures[i]) || math.IsNaN(meanOfCluster[i]) {
+			continue
+		}
 		res += math.Abs(sampleFeatures[i] - meanOfCluster[i])
 	}
-	return res / float64(len(sampleFeatures)), nil
+	a := res / float64(len(sampleFeatures))
+	return a, nil
 }
 
 func (e *Engine) String() string {
@@ -36,7 +40,7 @@ func (e *Engine) String() string {
 func (e *Engine) Normalize(data [][]float64) func(i, j int, v float64) float64 {
 	e.feed(data)
 	return func(i, j int, v float64) float64 {
-		return round((v-e.stats[j].mean)/e.stats[j].std, 0.0005)
+		return (v - e.stats[j].mean) / e.stats[j].std
 	}
 }
 
@@ -46,9 +50,9 @@ func (e *Engine) feed(data [][]float64) {
 		return
 	}
 	e.stats = make(map[int]*featStat, len(data[0]))
-	for i, features := range data {
-		for j, feat := range features {
-			e.update(i, j, size, feat)
+	for i := range data {
+		for j := range data[i] {
+			e.update(i, j, size, data[i][j])
 		}
 	}
 }
@@ -59,15 +63,12 @@ func (e *Engine) update(i, j, size int, feat float64) {
 	}
 	e.stats[j].values[i] = feat
 	e.stats[j].setMeanStd()
-	e.stats[j].setMinMax()
 }
 
 type featStat struct {
 	values []float64
 	mean   float64
 	std    float64
-	min    float64
-	max    float64
 }
 
 func newFeatStat(size int) *featStat {
@@ -75,20 +76,11 @@ func newFeatStat(size int) *featStat {
 		values: make([]float64, size, size),
 		mean:   0,
 		std:    0,
-		min:    math.MaxFloat64,
-		max:    -math.MaxFloat64,
 	}
 }
 
 func (s *featStat) setMeanStd() {
 	s.mean, s.std = stat.MeanStdDev(s.values, s.weights())
-}
-
-func (s *featStat) setMinMax() {
-	for _, v := range s.values {
-		s.min = math.Min(s.min, v)
-		s.max = math.Max(s.max, v)
-	}
 }
 
 // TODO: how to smartly weight features?
