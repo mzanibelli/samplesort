@@ -85,7 +85,19 @@ func TestCache(t *testing.T) {
 		})
 	t.Run("it should not write data if there was an error during encoding",
 		func(t *testing.T) {
-			t.Skip("TODO: make mock produce invalid json")
+			fs := mkFs("", nil, false)
+			target := mkData()
+			build := func() (interface{}, error) {
+				return mkData("malformed"), nil
+			}
+			SUT := cache.New(fs, defaultConfig())
+			err := SUT.Fetch("foo", target, build)
+			t.Log(err)
+			expected := 0
+			actual := fs.written
+			if expected != actual {
+				t.Errorf("expected: %v, actual: %v", expected, actual)
+			}
 		})
 	t.Run("it should return an error if we couldn't read the cached data",
 		func(t *testing.T) {
@@ -283,9 +295,11 @@ func (m *mockFS) WriteAll(name string, data []byte) error {
 func mkData(vs ...string) *mockData {
 	switch {
 	case len(vs) == 0:
-		return &mockData{map[string]string{}}
+		return &mockData{map[string]string{}, true}
+	case len(vs) == 1:
+		return &mockData{nil, false}
 	case len(vs)%2 != 0:
-		panic("use key-value pairs to build data mock")
+		panic("nope")
 	}
 	res := make(map[string]string, len(vs)/2)
 	var key string
@@ -296,11 +310,33 @@ func mkData(vs ...string) *mockData {
 			res[key] = v
 		}
 	}
-	return &mockData{res}
+	return &mockData{res, true}
 }
 
 type mockData struct {
-	Data map[string]string `json:"data"`
+	Data  map[string]string
+	valid bool
+}
+
+func (m *mockData) MarshalJSON() ([]byte, error) {
+	if !m.valid {
+		return []byte("{aa"), errors.New("foo")
+	}
+	res := make(map[string]interface{})
+	res["data"] = m.Data
+	return json.Marshal(&res)
+}
+
+func (m *mockData) UnmarshalJSON(data []byte) error {
+	if !m.valid {
+		return errors.New("malformed")
+	}
+	res := make(map[string]map[string]string)
+	err := json.Unmarshal(data, &res)
+	if value, ok := res["data"]; ok {
+		m.Data = value
+	}
+	return err
 }
 
 func defaultConfig() *mockConfig {

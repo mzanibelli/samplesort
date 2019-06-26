@@ -6,7 +6,6 @@ import (
 	"github.com/jeremywohl/flatten"
 )
 
-// TODO: regex-based keys filtering?
 type Sample struct {
 	path     string
 	features []feature
