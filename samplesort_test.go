@@ -60,7 +60,6 @@ func TestConfigIsCorrectlyApplied(t *testing.T) {
 		samplesort.WithDataFormat("baz"),
 		samplesort.WithSize(1337),
 		samplesort.WithMaxIterations(42),
-		samplesort.WithMaxZScore(777),
 		samplesort.WithoutCache(),
 	).DumpConfig(output)
 	expected, actual := formatForAssertion(output,
@@ -69,7 +68,6 @@ func TestConfigIsCorrectlyApplied(t *testing.T) {
 		"output: baz",
 		"size: 1337",
 		"threshold: 42",
-		"zscore: 777.00",
 		"cache: false",
 	)
 	if expected != actual {

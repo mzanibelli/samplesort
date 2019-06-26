@@ -7,13 +7,12 @@ import (
 )
 
 const (
-	defaultFileSystemRoot string  = ""
-	defaultAudioFormat    string  = ".wav"
-	defaultDataFormat     string  = ".json"
-	defaultSize           int     = 1
-	defaultMaxIterations  int     = 10
-	defaultMaxZScore      float64 = 2
-	defaultEnableCache    bool    = true
+	defaultFileSystemRoot string = ""
+	defaultAudioFormat    string = ".wav"
+	defaultDataFormat     string = ".json"
+	defaultSize           int    = 1
+	defaultMaxIterations  int    = 10
+	defaultEnableCache    bool   = true
 )
 
 type config struct {
@@ -22,7 +21,6 @@ type config struct {
 	dataFormat     string
 	size           int
 	maxIterations  int
-	maxZScore      float64
 	enableCache    bool
 	logger         *log.Logger
 }
@@ -32,7 +30,6 @@ func (p *config) AudioFormat() string    { return p.audioFormat }
 func (p *config) DataFormat() string     { return p.dataFormat }
 func (p *config) Size() int              { return p.size }
 func (p *config) MaxIterations() int     { return p.maxIterations }
-func (p *config) MaxZScore() float64     { return p.maxZScore }
 func (p *config) EnableCache() bool      { return p.enableCache }
 
 type option func(p *config) error
@@ -44,7 +41,6 @@ func newConfig(options ...option) *config {
 		dataFormat:     defaultDataFormat,
 		size:           defaultSize,
 		maxIterations:  defaultMaxIterations,
-		maxZScore:      defaultMaxZScore,
 		enableCache:    defaultEnableCache,
 		logger:         nil,
 	}
@@ -61,7 +57,6 @@ func (p *config) String() string {
 	b.WriteString(fmt.Sprintf("output: %s\n", p.dataFormat))
 	b.WriteString(fmt.Sprintf("size: %d\n", p.size))
 	b.WriteString(fmt.Sprintf("threshold: %d\n", p.maxIterations))
-	b.WriteString(fmt.Sprintf("zscore: %.2f\n", p.maxZScore))
 	b.WriteString(fmt.Sprintf("cache: %t\n", p.enableCache))
 	return b.String()
 }
@@ -97,13 +92,6 @@ func WithSize(value int) option {
 func WithMaxIterations(value int) option {
 	return func(p *config) error {
 		p.maxIterations = value
-		return nil
-	}
-}
-
-func WithMaxZScore(value float64) option {
-	return func(p *config) error {
-		p.maxZScore = value
 		return nil
 	}
 }
