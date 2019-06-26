@@ -148,6 +148,10 @@ func TestFeaturesShouldBeTheRawSortedData(t *testing.T) {
 	}
 }
 
+func TestTheResultsAreConsistentWithHumanEar(t *testing.T) {
+	t.Skip("TODO: establish well known comparisons between two similar and one very dissimilar sample")
+}
+
 func sortByKey(input map[string]float64) [][]float64 {
 	keys := make([]string, 0, len(input))
 	for key := range input {
@@ -161,10 +165,6 @@ func sortByKey(input map[string]float64) [][]float64 {
 	res := make([][]float64, 1, 1)
 	res[0] = features
 	return res
-}
-
-func TestTheResultsAreConsistentWithHumanEar(t *testing.T) {
-	t.Skip("TODO: establish well known comparisons between two similar and one very dissimilar sample")
 }
 
 // The first letter for each file name of a given directory allows quick
