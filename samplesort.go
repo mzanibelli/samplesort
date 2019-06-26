@@ -33,12 +33,12 @@ func New(executable string, options ...option) *sampleSort {
 	s := &sampleSort{
 		config:     newConfig(options...),
 		collection: collection.New(),
+		engine:     engine.New(),
 	}
 	bin := which(executable, s.config.DataFormat())
 	s.cache = cache.New(fs, s.config)
 	s.extractor = extractor.New(s.cache, bin)
 	s.parser = parser.New(fs, s.extractor, s.config)
-	s.engine = engine.New(s.config)
 	s.analyze = analyze.New(s.collection, s.engine, s.cache, s.config)
 	return s
 }

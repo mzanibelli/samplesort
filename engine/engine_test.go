@@ -8,7 +8,7 @@ import (
 	"testing/quick"
 )
 
-var seed int = 42
+var seed int64 = 42
 
 type generator [][]float64
 
@@ -25,9 +25,9 @@ func (g generator) Generate(r *rand.Rand, size int) reflect.Value {
 	return reflect.ValueOf(g)
 }
 
-func getData(g generator, seed int) [][]float64 {
+func getData(g generator, seed int64) [][]float64 {
 	input, ok := quick.Value(reflect.TypeOf(g),
-		rand.New(rand.NewSource(42)))
+		rand.New(rand.NewSource(seed)))
 	if !ok {
 		panic("generator failed")
 	}
@@ -47,7 +47,7 @@ func TestNormalize(t *testing.T) {
 			t.Skip("normalization still not decided")
 			checkSign := func(g generator) bool {
 				data := getData(g, seed)
-				engine.New(mockConfig{}).Normalize(data)
+				engine.New().Normalize(data)
 				return true
 			}
 			if err := quick.Check(checkSign, nil); err != nil {
@@ -64,7 +64,7 @@ func TestDistance(t *testing.T) {
 		func(t *testing.T) {
 			checkRange := func(g generator) bool {
 				data := getData(g, seed)
-				SUT := engine.New(mockConfig{})
+				SUT := engine.New()
 				SUT.Normalize(data)
 				for i := range data {
 					input := data[i]
@@ -80,7 +80,3 @@ func TestDistance(t *testing.T) {
 			}
 		})
 }
-
-type mockConfig struct{}
-
-func (mockConfig) MaxZScore() float64 { return 0.5 }

@@ -7,17 +7,12 @@ import (
 	"gonum.org/v1/gonum/stat"
 )
 
-type config interface {
-	MaxZScore() float64
-}
-
 type Engine struct {
 	stats map[int]*featStat
-	cfg   config
 }
 
-func New(cfg config) *Engine {
-	return &Engine{cfg: cfg}
+func New() *Engine {
+	return &Engine{}
 }
 
 func (e *Engine) Distance(sampleFeatures, meanOfCluster []float64) (float64, error) {
@@ -64,7 +59,7 @@ func (e *Engine) update(i, j, size int, feat float64) {
 	}
 	e.stats[j].values[i] = feat
 	e.stats[j].setMeanStd()
-	e.stats[j].setMinMax(e.cfg.MaxZScore())
+	e.stats[j].setMinMax()
 }
 
 type featStat struct {
@@ -89,7 +84,7 @@ func (s *featStat) setMeanStd() {
 	s.mean, s.std = stat.MeanStdDev(s.values, s.weights())
 }
 
-func (s *featStat) setMinMax(threshold float64) {
+func (s *featStat) setMinMax() {
 	for _, v := range s.values {
 		s.min = math.Min(s.min, v)
 		s.max = math.Max(s.max, v)
