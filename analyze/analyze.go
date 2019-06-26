@@ -1,11 +1,6 @@
 package analyze
 
-import (
-	"fmt"
-
-	"github.com/bugra/kmeans"
-	"gonum.org/v1/gonum/mat"
-)
+import "github.com/bugra/kmeans"
 
 type dataset interface {
 	Features() [][]float64
@@ -61,8 +56,8 @@ func (a *Analyze) Analyze() error {
 	}
 
 	a.cfg.Log("normalizing features...")
-	p := newPayload(rawFeatures)
-	p.apply(a.stats.Normalize(rawFeatures))
+	p := newPayload(rawFeatures).
+		apply(a.stats.Normalize(rawFeatures))
 
 	a.cfg.Log("computing kmeans...")
 	err = a.cache.Fetch("kmeans", &result,
@@ -82,44 +77,4 @@ func (a *Analyze) Analyze() error {
 func (a *Analyze) kmeans(features [][]float64) ([]int, error) {
 	return kmeans.Kmeans(features, a.cfg.Size(),
 		a.stats.Distance, a.cfg.MaxIterations())
-}
-
-type payload struct {
-	rows  int
-	cols  int
-	dense *mat.Dense
-}
-
-func newPayload(data [][]float64) *payload {
-	if len(data) == 0 {
-		return nil
-	}
-	r, c := len(data), len(data[0])
-	p := &payload{r, c, mat.NewDense(r, c, make([]float64, r*c, r*c))}
-	for i := range data {
-		p.dense.SetRow(i, data[i])
-	}
-	return p
-}
-
-func (p *payload) data() [][]float64 {
-	res := make([][]float64, p.rows, p.rows)
-	for i := range res {
-		row := make([]float64, p.cols, p.cols)
-		copy(row, p.dense.RawRowView(i))
-		res[i] = row
-	}
-	return res
-}
-
-func (p *payload) apply(f func(i, j int, v float64) float64) {
-	p.dense.Apply(f, p.dense)
-}
-
-func (p *payload) r() int { return p.rows }
-func (p *payload) c() int { return p.cols }
-
-func (p *payload) String() string {
-	return fmt.Sprintf("%v\n",
-		mat.Formatted(p.dense, mat.Prefix(""), mat.Squeeze()))
 }

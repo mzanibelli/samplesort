@@ -11,6 +11,11 @@ type Sample struct {
 	features []feature
 }
 
+type feature struct {
+	key   string
+	value float64
+}
+
 func New(path string) *Sample {
 	return &Sample{path, make([]feature, 0)}
 }
@@ -57,9 +62,4 @@ func (s *Sample) sort() {
 			return true
 		}
 	})
-}
-
-type feature struct {
-	key   string
-	value float64
 }

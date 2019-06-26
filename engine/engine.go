@@ -3,8 +3,6 @@ package engine
 import (
 	"encoding/json"
 	"math"
-
-	"gonum.org/v1/gonum/stat"
 )
 
 type Engine struct {
@@ -15,21 +13,23 @@ func New() *Engine {
 	return &Engine{}
 }
 
+func (e *Engine) String() string {
+	str, _ := json.MarshalIndent(e.stats, "", " ")
+	return string(str)
+}
+
 func (e *Engine) Distance(sampleFeatures, meanOfCluster []float64) (float64, error) {
 	var res float64 = 0
 	for i := range sampleFeatures {
-		if math.IsNaN(sampleFeatures[i]) || math.IsNaN(meanOfCluster[i]) {
+		if math.IsNaN(sampleFeatures[i]) {
+			continue
+		}
+		if math.IsNaN(meanOfCluster[i]) {
 			continue
 		}
 		res += math.Abs(sampleFeatures[i] - meanOfCluster[i])
 	}
-	a := res / float64(len(sampleFeatures))
-	return a, nil
-}
-
-func (e *Engine) String() string {
-	str, _ := json.MarshalIndent(e.stats, "", " ")
-	return string(str)
+	return res / float64(len(sampleFeatures)), nil
 }
 
 // See: https://en.wikipedia.org/wiki/Feature_scaling
@@ -64,24 +64,3 @@ func (e *Engine) update(i, j, size int, feat float64) {
 	e.stats[j].values[i] = feat
 	e.stats[j].setMeanStd()
 }
-
-type featStat struct {
-	values []float64
-	mean   float64
-	std    float64
-}
-
-func newFeatStat(size int) *featStat {
-	return &featStat{
-		values: make([]float64, size, size),
-		mean:   0,
-		std:    0,
-	}
-}
-
-func (s *featStat) setMeanStd() {
-	s.mean, s.std = stat.MeanStdDev(s.values, s.weights())
-}
-
-// TODO: how to smartly weight features?
-func (s *featStat) weights() []float64 { return nil }
