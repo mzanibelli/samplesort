@@ -43,7 +43,7 @@ func New(executable string, options ...option) *sampleSort {
 	return s
 }
 
-func (s *sampleSort) WriteTo(output io.Writer) (int64, error) {
+func (s *sampleSort) compute() error {
 	go s.parser.Parse(s.config.FileSystemRoot())
 	go func() {
 		for err := range s.extractor.Err() {
@@ -55,7 +55,12 @@ func (s *sampleSort) WriteTo(output io.Writer) (int64, error) {
 		smp.Flatten(e.Data())
 		s.collection.Append(smp)
 	}
-	if err := s.analyze.Analyze(); err != nil {
+	return s.analyze.Analyze()
+}
+
+func (s *sampleSort) WriteTo(output io.Writer) (int64, error) {
+	err := s.compute()
+	if err != nil {
 		return 0, err
 	}
 	if s.collection.Len() > 0 {
