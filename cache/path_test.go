@@ -1,7 +1,7 @@
 package cache_test
 
 import (
-	"errors"
+	"samplesort/cache"
 	"testing"
 )
 
@@ -12,7 +12,7 @@ func TestPath(t *testing.T) {
 		key      string
 		format   string
 		expected string
-		err      error
+		err      bool
 	}{
 		{
 			name:     "it should use the absolute key path if possible",
@@ -20,7 +20,7 @@ func TestPath(t *testing.T) {
 			key:      "/foo.wav",
 			format:   ".json",
 			expected: "/foo.wav.json",
-			err:      nil,
+			err:      false,
 		},
 		{
 			name:     "it should make the final path relative to the root",
@@ -28,7 +28,7 @@ func TestPath(t *testing.T) {
 			key:      "foo.wav",
 			format:   ".json",
 			expected: "/tmp/foo.wav.json",
-			err:      nil,
+			err:      false,
 		},
 		{
 			name:     "it should dedupe common path components",
@@ -36,7 +36,7 @@ func TestPath(t *testing.T) {
 			key:      "./data/foo.wav",
 			format:   ".json",
 			expected: "data/foo.wav.json",
-			err:      nil,
+			err:      false,
 		},
 		{
 			name:     "it should not go back to current directory",
@@ -44,28 +44,27 @@ func TestPath(t *testing.T) {
 			key:      "kmeans",
 			format:   ".json",
 			expected: "testdata/duplicates/kmeans.json",
-			err:      nil,
+			err:      false,
 		},
 		{
 			name:     "it should return an error if path cannot be made relative",
 			root:     "/",
 			key:      "bar/baz",
 			format:   ".json",
-			expected: "testdata/duplicates/kmeans.json",
-			err:      errors.New("foo"),
+			expected: "",
+			err:      true,
 		},
 	}
 	for _, c := range cases {
-		t.Run(c.name,
-			func(t *testing.T) {
-				actual, err := cache.Path(c.root, c.key, c.format)
-				if c.err != err {
-					t.Log("got:", err)
-					t.Fatal("error assertion failed")
-				}
-				if c.expected != actual {
-					t.Errorf("expected: %s, actual: %s", expected, actual)
-				}
-			})
+		t.Run(c.name, func(t *testing.T) {
+			actual, err := cache.Path(c.root, c.key, c.format)
+			t.Log(err)
+			if c.err == true && err == nil {
+				t.Error("error assertion failed")
+			}
+			if c.expected != actual {
+				t.Errorf("expected: %s, actual: %s", c.expected, actual)
+			}
+		})
 	}
 }
