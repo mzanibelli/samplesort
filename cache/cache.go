@@ -1,9 +1,6 @@
 package cache
 
-import (
-	"encoding/json"
-	"path/filepath"
-)
+import "encoding/json"
 
 type Cache struct {
 	fs  storage
@@ -21,7 +18,11 @@ func (c *Cache) Fetch(
 ) error {
 	var content []byte
 	var err error
-	path, err := c.path(key)
+	path, err := Path(
+		c.cfg.FileSystemRoot(),
+		key,
+		c.cfg.DataFormat(),
+	)
 	if err != nil {
 		return err
 	}
@@ -62,20 +63,4 @@ func (c *Cache) fromStorage(path string, target interface{}) error {
 		return err
 	}
 	return nil
-}
-
-func (c *Cache) path(key string) (string, error) {
-	root := c.cfg.FileSystemRoot()
-	file := key + c.cfg.DataFormat()
-	if filepath.IsAbs(file) {
-		return file, nil
-	}
-	if filepath.Base(file) == file {
-		return filepath.Join(root, file), nil
-	}
-	rel, err := filepath.Rel(root, file)
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(root, rel), nil
 }

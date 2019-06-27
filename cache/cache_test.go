@@ -152,7 +152,7 @@ func TestItShouldReturnAnErrorIfWriteFails(t *testing.T) {
 	}
 }
 
-func TestItShouldReturnAnErrorIfPathCannotBeMadeRelative(t *testing.T) {
+func TestItShouldReturnAnErrorIfPathReturnsAnError(t *testing.T) {
 	fs := mkFs("", nil, false)
 	SUT := cache.New(fs, withRoot("/"))
 	err := SUT.Fetch("bar/baz", nil, nop)
