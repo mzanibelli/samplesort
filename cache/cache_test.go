@@ -7,215 +7,194 @@ import (
 	"testing"
 )
 
-func TestCache(t *testing.T) {
-	t.Run("it should return cached data if found",
-		func(t *testing.T) {
-			fs := mkFs(`{"data":{"foo":"bar"}}`, nil, true)
-			target := mkData()
-			SUT := cache.New(fs, defaultConfig())
-			err := SUT.Fetch("foo", target, nop)
-			t.Log(err)
-			expected := "bar"
-			actual := target.Data["foo"]
-			if expected != actual {
-				t.Errorf("expected: %v, actual: %v", expected, actual)
-			}
-		})
-	t.Run("it should build data if not found",
-		func(t *testing.T) {
-			fs := mkFs("", nil, false)
-			target := mkData()
-			build := func() (interface{}, error) {
-				return mkData("foo", "bar"), nil
-			}
-			SUT := cache.New(fs, defaultConfig())
-			err := SUT.Fetch("foo", target, build)
-			t.Log(err)
-			expected := "bar"
-			actual := target.Data["foo"]
-			if expected != actual {
-				t.Errorf("expected: %v, actual: %v", expected, actual)
-			}
-		})
-	t.Run("it should write data if not found",
-		func(t *testing.T) {
-			fs := mkFs("", nil, false)
-			target := mkData()
-			build := func() (interface{}, error) {
-				return mkData("foo", "bar"), nil
-			}
-			SUT := cache.New(fs, defaultConfig())
-			err := SUT.Fetch("foo", target, build)
-			t.Log(err)
-			b, _ := json.Marshal(target)
-			expected := len(b)
-			actual := fs.written
-			if expected != actual {
-				t.Errorf("expected: %v, actual: %v", expected, actual)
-			}
-		})
-	t.Run("it should not (over)write data if cached data is found",
-		func(t *testing.T) {
-			fs := mkFs(`{"data":{"foo":"bar"}}`, nil, true)
-			target := mkData()
-			SUT := cache.New(fs, defaultConfig())
-			err := SUT.Fetch("foo", target, nop)
-			t.Log(err)
-			expected := 0
-			actual := fs.written
-			if expected != actual {
-				t.Errorf("expected: %v, actual: %v", expected, actual)
-			}
-		})
-	t.Run("it should not write data if there was an error during build",
-		func(t *testing.T) {
-			fs := mkFs("", nil, false)
-			target := mkData()
-			build := func() (interface{}, error) {
-				return mkData("foo", "bar"), errors.New("foo")
-			}
-			SUT := cache.New(fs, defaultConfig())
-			err := SUT.Fetch("foo", target, build)
-			t.Log(err)
-			expected := 0
-			actual := fs.written
-			if expected != actual {
-				t.Errorf("expected: %v, actual: %v", expected, actual)
-			}
-		})
-	t.Run("it should not write data if there was an error during encoding",
-		func(t *testing.T) {
-			fs := mkFs("", nil, false)
-			target := mkData()
-			build := func() (interface{}, error) {
-				return mkData("malformed"), nil
-			}
-			SUT := cache.New(fs, defaultConfig())
-			err := SUT.Fetch("foo", target, build)
-			t.Log(err)
-			expected := 0
-			actual := fs.written
-			if expected != actual {
-				t.Errorf("expected: %v, actual: %v", expected, actual)
-			}
-		})
-	t.Run("it should return an error if we couldn't read the cached data",
-		func(t *testing.T) {
-			fs := mkFs("", errors.New("foo"), true)
-			target := mkData()
-			SUT := cache.New(fs, defaultConfig())
-			err := SUT.Fetch("foo", target, nop)
-			expected := true
-			actual := err != nil
-			if expected != actual {
-				t.Errorf("expected: %v, actual: %v", expected, actual)
-			}
-		})
-	t.Run("it should return an error if we couldn't build data",
-		func(t *testing.T) {
-			fs := mkFs("", nil, false)
-			target := mkData()
-			build := func() (interface{}, error) {
-				return mkData(), errors.New("foo")
-			}
-			SUT := cache.New(fs, defaultConfig())
-			err := SUT.Fetch("foo", target, build)
-			expected := true
-			actual := err != nil
-			if expected != actual {
-				t.Errorf("expected: %v, actual: %v", expected, actual)
-			}
-		})
-	t.Run("it should return an error if decoding failed",
-		func(t *testing.T) {
-			fs := mkFs("", nil, true)
-			target := mkData()
-			SUT := cache.New(fs, defaultConfig())
-			err := SUT.Fetch("foo", target, nop)
-			expected := true
-			actual := err != nil
-			if expected != actual {
-				t.Errorf("expected: %v, actual: %v", expected, actual)
-			}
-		})
-	t.Run("it should return an error if writing failed",
-		func(t *testing.T) {
-			fs := mkFs("", errors.New("foo"), false)
-			target := mkData()
-			build := func() (interface{}, error) {
-				return mkData("foo", "bar"), nil
-			}
-			SUT := cache.New(fs, defaultConfig())
-			err := SUT.Fetch("foo", target, build)
-			expected := true
-			actual := err != nil
-			if expected != actual {
-				t.Errorf("expected: %v, actual: %v", expected, actual)
-			}
-		})
-	t.Run("it should return an error key and root cannot be made relative",
-		func(t *testing.T) {
-			fs := mkFs("", nil, false)
-			SUT := cache.New(fs, withRoot("/"))
-			err := SUT.Fetch("bar/baz", nil, nop)
-			expected := true
-			actual := err != nil
-			if expected != actual {
-				t.Errorf("expected: %v, actual: %v", expected, actual)
-			}
-		})
-	t.Run("it should build data anyway if cache is disabled",
-		func(t *testing.T) {
-			fs := mkFs("", nil, true)
-			target := mkData()
-			build := func() (interface{}, error) {
-				return mkData("foo", "bar"), nil
-			}
-			SUT := cache.New(fs, noCache())
-			err := SUT.Fetch("foo", target, build)
-			t.Log(err)
-			expected := "bar"
-			actual := target.Data["foo"]
-			if expected != actual {
-				t.Errorf("expected: %v, actual: %v", expected, actual)
-			}
-		})
-	t.Run("it should return early if the build command wrote the file",
-		func(t *testing.T) {
-			fs := mkFs("", nil, false)
-			target := mkData()
-			build := func() (interface{}, error) {
-				fs.content = []byte(`{"data":{"foo":"bar"}}`)
-				fs.exists = true
-				return nil, nil
-			}
-			SUT := cache.New(fs, defaultConfig())
-			err := SUT.Fetch("foo", target, build)
-			t.Log(err)
-			expected := "bar"
-			actual := target.Data["foo"]
-			if expected != actual {
-				t.Errorf("expected: %v, actual: %v", expected, actual)
-			}
-		})
-	t.Run("it should write the new content",
-		func(t *testing.T) {
-			fs := mkFs("", nil, false)
-			target := mkData()
-			build := func() (interface{}, error) {
-				fs.content = []byte(`{"data":{"foo":"bar"}}`)
-				fs.exists = true
-				return nil, nil
-			}
-			SUT := cache.New(fs, defaultConfig())
-			err := SUT.Fetch("foo", target, build)
-			t.Log(err)
-			expected := "bar"
-			actual := target.Data["foo"]
-			if expected != actual {
-				t.Errorf("expected: %v, actual: %v", expected, actual)
-			}
-		})
+func TestItShouldReturnCachedDataIfFound(t *testing.T) {
+	fs := mkFs(`{"data":{"foo":"bar"}}`, nil, true)
+	target := mkData()
+	SUT := cache.New(fs, defaultConfig())
+	err := SUT.Fetch("foo", target, nop)
+	t.Log(err)
+	expected := "bar"
+	actual := target.Data["foo"]
+	if expected != actual {
+		t.Errorf("expected: %v, actual: %v", expected, actual)
+	}
+}
+
+func TestItShouldBuildDataIfNotFound(t *testing.T) {
+	fs := mkFs("", nil, false)
+	target := mkData()
+	build := func() (interface{}, error) {
+		return mkData("foo", "bar"), nil
+	}
+	SUT := cache.New(fs, defaultConfig())
+	err := SUT.Fetch("foo", target, build)
+	t.Log(err)
+	expected := "bar"
+	actual := target.Data["foo"]
+	if expected != actual {
+		t.Errorf("expected: %v, actual: %v", expected, actual)
+	}
+}
+
+func TestItShouldWriteDataIfNotFound(t *testing.T) {
+	fs := mkFs("", nil, false)
+	target := mkData()
+	build := func() (interface{}, error) {
+		return mkData("foo", "bar"), nil
+	}
+	SUT := cache.New(fs, defaultConfig())
+	err := SUT.Fetch("foo", target, build)
+	t.Log(err)
+	b, _ := json.Marshal(target)
+	expected := len(b)
+	actual := fs.written
+	if expected != actual {
+		t.Errorf("expected: %v, actual: %v", expected, actual)
+	}
+}
+
+func TestItShouldNotOverwriteCachedData(t *testing.T) {
+	fs := mkFs(`{"data":{"foo":"bar"}}`, nil, true)
+	target := mkData()
+	SUT := cache.New(fs, defaultConfig())
+	err := SUT.Fetch("foo", target, nop)
+	t.Log(err)
+	expected := 0
+	actual := fs.written
+	if expected != actual {
+		t.Errorf("expected: %v, actual: %v", expected, actual)
+	}
+}
+
+func TestItShouldNotWriteIfBuildFails(t *testing.T) {
+	fs := mkFs("", nil, false)
+	target := mkData()
+	build := func() (interface{}, error) {
+		return mkData("foo", "bar"), errors.New("foo")
+	}
+	SUT := cache.New(fs, defaultConfig())
+	err := SUT.Fetch("foo", target, build)
+	t.Log(err)
+	expected := 0
+	actual := fs.written
+	if expected != actual {
+		t.Errorf("expected: %v, actual: %v", expected, actual)
+	}
+}
+
+func TestItShouldNotWriteIfEncodingFails(t *testing.T) {
+	fs := mkFs("", nil, false)
+	target := mkData()
+	build := func() (interface{}, error) {
+		return mkData("malformed"), nil
+	}
+	SUT := cache.New(fs, defaultConfig())
+	err := SUT.Fetch("foo", target, build)
+	t.Log(err)
+	expected := 0
+	actual := fs.written
+	if expected != actual {
+		t.Errorf("expected: %v, actual: %v", expected, actual)
+	}
+}
+
+func TestItShouldReturnAnErrorIfReadFails(t *testing.T) {
+	fs := mkFs("", errors.New("foo"), true)
+	target := mkData()
+	SUT := cache.New(fs, defaultConfig())
+	err := SUT.Fetch("foo", target, nop)
+	expected := true
+	actual := err != nil
+	if expected != actual {
+		t.Errorf("expected: %v, actual: %v", expected, actual)
+	}
+}
+
+func TestItShouldReturnAnErrorIfBuildFails(t *testing.T) {
+	fs := mkFs("", nil, false)
+	target := mkData()
+	build := func() (interface{}, error) {
+		return mkData(), errors.New("foo")
+	}
+	SUT := cache.New(fs, defaultConfig())
+	err := SUT.Fetch("foo", target, build)
+	expected := true
+	actual := err != nil
+	if expected != actual {
+		t.Errorf("expected: %v, actual: %v", expected, actual)
+	}
+}
+
+func TestItShouldReturnAnErrorIfDecodingFails(t *testing.T) {
+	fs := mkFs("", nil, true)
+	target := mkData()
+	SUT := cache.New(fs, defaultConfig())
+	err := SUT.Fetch("foo", target, nop)
+	expected := true
+	actual := err != nil
+	if expected != actual {
+		t.Errorf("expected: %v, actual: %v", expected, actual)
+	}
+}
+
+func TestItShouldReturnAnErrorIfWriteFails(t *testing.T) {
+	fs := mkFs("", errors.New("foo"), false)
+	target := mkData()
+	build := func() (interface{}, error) {
+		return mkData("foo", "bar"), nil
+	}
+	SUT := cache.New(fs, defaultConfig())
+	err := SUT.Fetch("foo", target, build)
+	expected := true
+	actual := err != nil
+	if expected != actual {
+		t.Errorf("expected: %v, actual: %v", expected, actual)
+	}
+}
+
+func TestItShouldReturnAnErrorIfPathCannotBeMadeRelative(t *testing.T) {
+	fs := mkFs("", nil, false)
+	SUT := cache.New(fs, withRoot("/"))
+	err := SUT.Fetch("bar/baz", nil, nop)
+	expected := true
+	actual := err != nil
+	if expected != actual {
+		t.Errorf("expected: %v, actual: %v", expected, actual)
+	}
+}
+
+func TestItShouldBuildDataIfCacheIsDisabled(t *testing.T) {
+	fs := mkFs("", nil, true)
+	target := mkData()
+	build := func() (interface{}, error) {
+		return mkData("foo", "bar"), nil
+	}
+	SUT := cache.New(fs, noCache())
+	err := SUT.Fetch("foo", target, build)
+	t.Log(err)
+	expected := "bar"
+	actual := target.Data["foo"]
+	if expected != actual {
+		t.Errorf("expected: %v, actual: %v", expected, actual)
+	}
+}
+
+func TestItShouldAllowTheBuildCommandToHandleWrite(t *testing.T) {
+	fs := mkFs("", nil, false)
+	target := mkData()
+	build := func() (interface{}, error) {
+		fs.content = []byte(`{"data":{"foo":"bar"}}`)
+		fs.exists = true
+		return nil, nil
+	}
+	SUT := cache.New(fs, defaultConfig())
+	err := SUT.Fetch("foo", target, build)
+	t.Log(err)
+	expected := "bar"
+	actual := target.Data["foo"]
+	if expected != actual {
+		t.Errorf("expected: %v, actual: %v", expected, actual)
+	}
 }
 
 func TestPath(t *testing.T) {
