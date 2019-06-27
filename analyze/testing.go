@@ -2,27 +2,29 @@ package analyze
 
 import "encoding/json"
 
-var (
-	TestOptionFeatures   [][]float64
-	TestOptionCenters    []int
-	TestOptionFetchError error
-)
-
-func MakeSUT() *Analyze {
-	t := mock{}
+func MakeSUT(
+	features [][]float64,
+	centers []int,
+	err error,
+) *Analyze {
+	t := mock{features, centers, err}
 	return New(t, t, t, t)
 }
 
-type mock struct{}
+type mock struct {
+	features [][]float64
+	centers  []int
+	err      error
+}
 
-func (mock) Fetch(key string, target interface{}, build func() (interface{}, error)) error {
+func (m mock) Fetch(key string, target interface{}, build func() (interface{}, error)) error {
 	switch target.(type) {
 	case *[][]float64:
-		swapJSON(TestOptionFeatures, target)
+		swapJSON(m.features, target)
 	case *[]int:
-		swapJSON(TestOptionCenters, target)
+		swapJSON(m.centers, target)
 	}
-	return TestOptionFetchError
+	return m.err
 }
 
 func (mock) Distance(s1, s2 []float64) (float64, error)              { return 0, nil }
