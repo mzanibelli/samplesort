@@ -1,6 +1,8 @@
 package cache
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type Cache struct {
 	fs  storage
