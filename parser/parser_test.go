@@ -9,67 +9,64 @@ import (
 	"time"
 )
 
-func TestParser(t *testing.T) {
-	t.Run("it should stop in case of previous error",
-		func(t *testing.T) {
-			fs := &mockFS{t, []fixture{
-				{"foo", mkfile("foo"), errors.New("foo")},
-				{"bar", mkfile("bar"), nil},
-			}, 0}
-			ext := new(mockExtractor)
-			SUT := parser.New(fs, ext, mockConfig{})
-			SUT.Parse("")
-			expected := 1
-			actual := fs.count
-			if expected != actual {
-				t.Errorf("expected: %d, actual: %d", expected, actual)
-			}
-		})
-	t.Run("it should do nothing if the entry is a directory",
-		func(t *testing.T) {
-			fs := &mockFS{t, []fixture{
-				{"foo", mkdir("foo"), nil},
-				{"bar", mkfile("bar"), nil},
-			}, 0}
-			ext := new(mockExtractor)
-			SUT := parser.New(fs, ext, mockConfig{})
-			SUT.Parse("")
-			expected := 2
-			actual := fs.count
-			if expected != actual {
-				t.Errorf("expected: %d, actual: %d", expected, actual)
-			}
-		})
-	t.Run("it should do nothing if the entry is not a supported input file",
-		func(t *testing.T) {
-			fs := &mockFS{t, []fixture{
-				{"foo.txt", mkfile("foo.txt"), nil},
-				{"bar.pdf", mkfile("bar.pdf"), nil},
-			}, 0}
-			ext := new(mockExtractor)
-			SUT := parser.New(fs, ext, mockConfig{})
-			SUT.Parse("")
-			expected := 2
-			actual := fs.count
-			if expected != actual {
-				t.Errorf("expected: %d, actual: %d", expected, actual)
-			}
-		})
-	t.Run("it should run the extractor if the entry is a supported input file",
-		func(t *testing.T) {
-			fs := &mockFS{t, []fixture{
-				{"foo.txt", mkfile("foo.txt"), nil},
-				{"bar.wav", mkfile("bar.wav"), nil},
-			}, 0}
-			ext := new(mockExtractor)
-			SUT := parser.New(fs, ext, mockConfig{})
-			SUT.Parse("")
-			expected := 1
-			actual := ext.count
-			if expected != actual {
-				t.Errorf("expected: %d, actual: %d", expected, actual)
-			}
-		})
+func TestItShouldStopInCaseOfError(t *testing.T) {
+	fs := &mockFS{t, []fixture{
+		{"foo", mkfile("foo"), errors.New("foo")},
+		{"bar", mkfile("bar"), nil},
+	}, 0}
+	ext := new(mockExtractor)
+	SUT := parser.New(fs, ext, mockConfig{})
+	SUT.Parse("")
+	expected := 1
+	actual := fs.count
+	if expected != actual {
+		t.Errorf("expected: %d, actual: %d", expected, actual)
+	}
+}
+
+func TestItShouldDoNothingIfTheEntryIsADirectory(t *testing.T) {
+	fs := &mockFS{t, []fixture{
+		{"foo", mkdir("foo"), nil},
+		{"bar", mkfile("bar"), nil},
+	}, 0}
+	ext := new(mockExtractor)
+	SUT := parser.New(fs, ext, mockConfig{})
+	SUT.Parse("")
+	expected := 2
+	actual := fs.count
+	if expected != actual {
+		t.Errorf("expected: %d, actual: %d", expected, actual)
+	}
+}
+
+func TestItShouldDoNothingIfTheEntryIsNotASupportedTypeOfFile(t *testing.T) {
+	fs := &mockFS{t, []fixture{
+		{"foo.txt", mkfile("foo.txt"), nil},
+		{"bar.pdf", mkfile("bar.pdf"), nil},
+	}, 0}
+	ext := new(mockExtractor)
+	SUT := parser.New(fs, ext, mockConfig{})
+	SUT.Parse("")
+	expected := 2
+	actual := fs.count
+	if expected != actual {
+		t.Errorf("expected: %d, actual: %d", expected, actual)
+	}
+}
+
+func TestItShouldRunTheExtractorIfTheFileIsSupported(t *testing.T) {
+	fs := &mockFS{t, []fixture{
+		{"foo.txt", mkfile("foo.txt"), nil},
+		{"bar.wav", mkfile("bar.wav"), nil},
+	}, 0}
+	ext := new(mockExtractor)
+	SUT := parser.New(fs, ext, mockConfig{})
+	SUT.Parse("")
+	expected := 1
+	actual := ext.count
+	if expected != actual {
+		t.Errorf("expected: %d, actual: %d", expected, actual)
+	}
 }
 
 func mkfile(id string) *mockFI { return &mockFI{id, false} }
