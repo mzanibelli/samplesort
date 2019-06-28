@@ -12,7 +12,7 @@ var (
 	defaultBuildData = map[string]string{"foo": "bar"}
 )
 
-var cases = []struct {
+var cacheCases = []struct {
 	name    string
 	success bool
 	cfg     *cache.TestConfig
@@ -193,7 +193,7 @@ var cases = []struct {
 }
 
 func TestFetch(t *testing.T) {
-	for _, c := range cases {
+	for _, c := range cacheCases {
 		t.Run(c.name, func(t *testing.T) {
 			err := cache.FetchTest(c.cfg)
 			t.Log(err)
